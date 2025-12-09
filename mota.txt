@@ -1,0 +1,668 @@
+================================================================================
+           KẾ HOẠCH CHI TIẾT: RECORDING & SCREENSHOT SERVICE
+================================================================================
+
+📌 GIỚI THIỆU DỰ ÁN
+================================================================================
+Tên dự án: CameraRecordingService
+Loại: Class Library (.NET 8) + Sample WPF App
+Mục đích: Cung cấp service ghi hình & chụp hình tái sử dụng
+Nền tảng: Windows .NET 8
+Thời gian ước tính: 3 tuần (15 ngày làm việc)
+
+================================================================================
+🎯 PHẠM VI DỰ ÁN
+================================================================================
+
+Tính năng 1: Ghi Hình (Recording)
+✅ Bắt đầu ghi hình từ camera (file .mp4)
+✅ Dừng ghi hình & lưu file
+✅ Pause/Resume ghi hình (nâng cao)
+✅ Hiển thị thời gian ghi hình realtime
+✅ Hiển thị dung lượng file đang ghi
+✅ Cho phép đặt tên file custom
+✅ Chọn folder lưu file
+✅ Cấu hình codec video (H.264, H.265)
+✅ Cấu hình bitrate (chất lượng)
+✅ Xử lý lỗi (camera mất kết nối, disk đầy, v.v.)
+✅ Thông báo tiến độ (event callback)
+
+Tính năng 2: Chụp Hình (Screenshot)
+✅ Chụp frame hiện tại từ camera stream
+✅ Lưu ảnh dạng PNG, JPG, BMP
+✅ Cho phép đặt tên file custom
+✅ Chọn folder lưu file
+✅ Chụp tự động định kỳ (interval screenshot)
+✅ Xử lý lỗi
+✅ Thông báo khi chụp thành công
+
+================================================================================
+🏗️ KIẾN TRÚC THỰC HIỆN
+================================================================================
+
+PHASE 1: THIẾT KẾ MODELS & INTERFACES (TUẦN 1)
+────────────────────────────────────────────────────────────────────────────
+
+📁 Models/
+
+RecordingConfig.cs
+├── OutputPath: string
+├── FileName: string
+├── VideoCodec: VideoCodec (enum: H264, H265)
+├── Bitrate: int (kbps)
+├── Width, Height, FPS: int
+└── MaxDuration: TimeSpan? (null = không giới hạn)
+
+ScreenshotConfig.cs
+├── OutputPath: string
+├── FileName: string
+├── ImageFormat: ImageFormat (enum: PNG, JPG, BMP)
+├── Quality: int (1-100, cho JPG)
+└── Timestamp: bool (thêm timestamp vào tên file)
+
+RecordingStatus.cs
+├── IsRecording: bool
+├── Duration: TimeSpan
+├── FileSize: long (bytes)
+├── FrameCount: int
+├── CurrentFPS: double
+└── StatusMessage: string
+
+ScreenshotResult.cs
+├── Success: bool
+├── FilePath: string
+├── FileSize: long
+├── Timestamp: DateTime
+└── ErrorMessage: string?
+
+📁 Enums/
+
+VideoCodec.cs
+├── H264
+├── H265
+└── MJPEG
+
+ImageFormat.cs
+├── PNG
+├── JPG
+└── BMP
+
+────────────────────────────────────────────────────────────────────────────
+
+PHASE 2: INTERFACE & ABSTRACT CLASSES (TUẦN 1)
+────────────────────────────────────────────────────────────────────────────
+
+📁 Interfaces/
+
+IRecordingService.cs
+├── StartRecordingAsync(CameraProfile, RecordingConfig): Task<bool>
+├── StopRecordingAsync(): Task<string> // trả về file path
+├── GetRecordingStatusAsync(): Task<RecordingStatus>
+├── Event: OnRecordingStatusChanged
+├── Event: OnRecordingError
+└── Property: IsRecording
+
+IScreenshotService.cs
+├── TakeScreenshotAsync(CameraProfile, ScreenshotConfig): Task<ScreenshotResult>
+├── StartIntervalScreenshotAsync(CameraProfile, ScreenshotConfig, interval): Task
+├── StopIntervalScreenshotAsync(): Task
+├── Event: OnScreenshotTaken
+├── Event: OnScreenshotError
+└── Property: IsCapturingInterval
+
+────────────────────────────────────────────────────────────────────────────
+
+PHASE 3: CORE SERVICE IMPLEMENTATION (TUẦN 2-3)
+────────────────────────────────────────────────────────────────────────────
+
+📁 Services/
+
+RecordingService.cs (MAIN)
+├── Private Fields:
+│   ├── MediaComposition (Media Foundation)
+│   ├── VideoEncoder
+│   ├── AudioEncoder (if needed)
+│   ├── _recordingTask: Task
+│   ├── _cancellationToken: CancellationToken
+│   ├── _frameBuffer: Queue<VideoFrame>
+│   └── _statusTimer: Timer
+│
+├── Public Methods:
+│   ├── StartRecordingAsync(profile, config)
+│   ├── StopRecordingAsync()
+│   ├── PauseRecordingAsync() [nâng cao]
+│   ├── ResumeRecordingAsync() [nâng cao]
+│   └── GetRecordingStatusAsync()
+│
+├── Private Methods:
+│   ├── InitializeMediaFoundation()
+│   ├── CreateVideoEncoder()
+│   ├── EncodeFrame(frame)
+│   ├── WriteToFile(data)
+│   ├── UpdateRecordingStatus()
+│   ├── HandleError(exception)
+│   └── ValidateRecordingConfig()
+│
+└── Events:
+    ├── RecordingStatusChanged
+    ├── RecordingError
+    └── RecordingCompleted
+
+ScreenshotService.cs (MAIN)
+├── Private Fields:
+│   ├── _lastFrame: VideoFrame
+│   ├── _intervalTimer: Timer
+│   ├── _captureInterval: TimeSpan
+│   └── _isCapturingInterval: bool
+│
+├── Public Methods:
+│   ├── TakeScreenshotAsync(profile, config)
+│   ├── StartIntervalScreenshotAsync(profile, config, interval)
+│   ├── StopIntervalScreenshotAsync()
+│   └── GetLastFrame()
+│
+├── Private Methods:
+│   ├── SaveFrame(frame, config)
+│   ├── CompressImage(bitmap, format, quality)
+│   ├── GenerateFileName(config)
+│   ├── ValidateScreenshotConfig()
+│   ├── HandleError(exception)
+│   └── OnIntervalElapsed()
+│
+└── Events:
+    ├── ScreenshotTaken
+    ├── ScreenshotError
+    └── IntervalScreenshotCompleted
+
+VideoEncodingService.cs (HELPER)
+├── EncodeToMP4(frames, config)
+├── SelectEncoder(codec)
+├── ApplyBitrate(encoder, bitrate)
+└── ValidateCodecSupport()
+
+MediaFrameService.cs (HELPER)
+├── ConvertD3DFrameToWritableBitmap()
+├── ConvertWritableBitmapToMat() [for OpenCV if needed]
+├── ResizeFrame(frame, width, height)
+└── RenderFrame(frame, drawables)
+
+────────────────────────────────────────────────────────────────────────────
+
+PHASE 4: UTILITIES & HELPERS (TUẦN 2)
+────────────────────────────────────────────────────────────────────────────
+
+📁 Helpers/
+
+FilePathHelper.cs
+├── GenerateUniqueFileName(folder, baseName, extension)
+├── EnsureDirectoryExists(path)
+├── GetAvailableDrivespace(path)
+├── IsPathValid(path)
+└── GetDefaultSaveFolder()
+
+MediaValidationHelper.cs
+├── IsCodecSupported(codec)
+├── IsImageFormatSupported(format)
+├── ValidateBitrate(bitrate, resolution, fps)
+└── GetRecommendedBitrate(resolution, fps, quality)
+
+TimestampHelper.cs
+├── GenerateTimestamp() // "2025-12-08_14-30-45"
+├── FormatDuration(duration) // "00:01:23"
+├── GetHumanReadableFileSize(bytes) // "125.5 MB"
+└── AddTimestampToFileName(filename)
+
+DiskSpaceHelper.cs
+├── EstimateRecordingSize(duration, bitrate)
+├── CheckDiskSpace(path, requiredBytes)
+├── GetDriveFreeSpace(driveLetter)
+└── WarnLowDiskSpace(threshold)
+
+────────────────────────────────────────────────────────────────────────────
+
+PHASE 5: EXCEPTION HANDLING (TUẦN 2)
+────────────────────────────────────────────────────────────────────────────
+
+📁 Exceptions/
+
+RecordingException.cs
+├── RecordingAlreadyInProgressException
+├── RecordingNotStartedException
+├── CodecNotSupportedException
+├── InvalidRecordingConfigException
+├── DiskSpaceInsufficientException
+├── CameraDisconnectedException
+└── MediaFoundationException
+
+ScreenshotException.cs
+├── InvalidScreenshotConfigException
+├── ImageFormatNotSupportedException
+├── CameraFrameUnavailableException
+├── FileWriteException
+└── ScreenshotSaveFailedException
+
+────────────────────────────────────────────────────────────────────────────
+
+PHASE 6: CONFIGURATION & SETTINGS (TUẦN 2)
+────────────────────────────────────────────────────────────────────────────
+
+📁 Config/
+
+RecordingDefaults.cs
+├── DEFAULT_VIDEO_CODEC = VideoCodec.H264
+├── DEFAULT_BITRATE = 5000 // kbps (5 Mbps)
+├── DEFAULT_OUTPUT_PATH = %Videos%
+├── SUPPORTED_CODECS = [H264, H265]
+├── MIN_BITRATE = 500
+├── MAX_BITRATE = 50000
+└── MAX_RECORDING_DURATION = 12 hours
+
+ScreenshotDefaults.cs
+├── DEFAULT_IMAGE_FORMAT = ImageFormat.PNG
+├── DEFAULT_OUTPUT_PATH = %Pictures%
+├── SUPPORTED_FORMATS = [PNG, JPG, BMP]
+├── DEFAULT_JPG_QUALITY = 85
+├── MIN_INTERVAL_SCREENSHOT = 1 second
+└── MAX_INTERVAL_SCREENSHOT = 60 seconds
+
+────────────────────────────────────────────────────────────────────────────
+
+PHASE 7: UNIT TESTS (TUẦN 3)
+────────────────────────────────────────────────────────────────────────────
+
+📁 Tests/
+
+RecordingServiceTests.cs
+├── TestStartRecording()
+├── TestStopRecording()
+├── TestInvalidConfig()
+├── TestCameraDisconnect()
+├── TestDiskSpaceFull()
+├── TestRecordingStatus()
+└── TestMaxDurationLimit()
+
+ScreenshotServiceTests.cs
+├── TestTakeScreenshot()
+├── TestImageFormats()
+├── TestIntervalScreenshot()
+├── TestInvalidConfig()
+└── TestQualitySettings()
+
+VideoEncodingTests.cs
+├── TestCodecSupport()
+├── TestBitrateValidation()
+└── TestMP4Output()
+
+HelperTests.cs
+├── TestFilePathGeneration()
+├── TestTimestampFormatting()
+├── TestDiskSpaceCheck()
+└── TestMediaValidation()
+
+────────────────────────────────────────────────────────────────────────────
+
+PHASE 8: SAMPLE WPF APPLICATION (TUẦN 3)
+────────────────────────────────────────────────────────────────────────────
+
+📁 RecordingServiceDemo/
+
+Models/
+└── UIViewModel.cs
+
+Forms/
+└── RecordingDemoForm.xaml
+    └── RecordingDemoForm.xaml.cs
+
+Views/
+├── RecordingControlPanel.xaml
+└── ScreenshotControlPanel.xaml
+
+App.xaml
+
+================================================================================
+📈 GIAI ĐOẠN THỰC HIỆN CHI TIẾ
+================================================================================
+
+TUẦN 1: THIẾT KẾ & CƠ SỞ HẠ TẦNG
+─────────────────────────────────────────────────────────────────────────
+
+📅 Ngày 1-2:
+  ☐ Tạo project structure
+  ☐ Thiết kế Models (RecordingConfig, ScreenshotConfig, Status)
+  ☐ Thiết kế Enums (VideoCodec, ImageFormat)
+  ☐ Thiết kế Interfaces (IRecordingService, IScreenshotService)
+
+📅 Ngày 3-4:
+  ☐ Thiết kế Exception classes
+  ☐ Thiết kế Config defaults
+  ☐ Thiết kế Helper classes (FilePathHelper, MediaValidationHelper)
+
+📅 Ngày 5:
+  ☐ Tạo base structure cho Services
+  ☐ Setup dependency injection
+  ☐ Tạo logging framework
+
+TUẦN 2: CORE FUNCTIONALITY
+─────────────────────────────────────────────────────────────────────────
+
+📅 Ngày 1-2:
+  ☐ Implement MediaFrameService
+    - Convert D3D frames to writable bitmaps
+    - Handle frame resizing
+    - Optimize frame processing
+
+📅 Ngày 3-4: 
+  ☐ Implement VideoEncodingService
+    - Setup Media Foundation
+    - H.264 encoder configuration
+    - H.265 encoder configuration (nếu hỗ trợ)
+    - Bitrate management
+
+📅 Ngày 5:
+  ☐ Implement ScreenshotService (phần cơ bản)
+    - Single screenshot
+    - Image format support (PNG, JPG, BMP)
+    - Quality settings
+
+TUẦN 3: HOÀN THIỆN & TESTING
+─────────────────────────────────────────────────────────────────────────
+
+📅 Ngày 1-2:
+  ☐ Implement RecordingService (đầy đủ)
+    - Start/Stop recording
+    - Status monitoring
+    - Error handling
+    - Event callbacks
+
+📅 Ngày 3:
+  ☐ Implement advanced features (nâng cao)
+    - Pause/Resume recording
+    - Interval screenshot
+    - Auto file cleanup
+
+📅 Ngày 4:
+  ☐ Unit testing toàn bộ services
+  ☐ Integration testing
+  ☐ Performance testing
+
+📅 Ngày 5:
+  ☐ Create sample WPF Demo App
+  ☐ Documentation
+  ☐ Final quality assurance
+
+================================================================================
+📊 LUỒNG HOẠT ĐỘNG
+================================================================================
+
+LUỒNG 1: GHI HÌNH
+────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────┐
+│ USER KHỞI ĐỘNG GHI HÌNH                                 │
+└────────────┬────────────────────────────────────────────┘
+             │
+             ▼
+┌─────────────────────────────────────────────────────────┐
+│ UI: Validate RecordingConfig                            │
+│ - Output path valid?                                    │
+│ - Filename không trùng?                                │
+│ - Bitrate hợp lệ?                                      │
+└────────────┬────────────────────────────────────────────┘
+             │
+             ▼
+┌─────────────────────────────────────────────────────────┐
+│ RecordingService.StartRecordingAsync()                 │
+│ - Initialize Media Foundation                          │
+│ - Create video encoder (H.264/H.265)                   │
+│ - Start frame capture thread                           │
+│ - Create MP4 file                                      │
+└────────────┬────────────────────────────────────────────┘
+             │
+             ▼
+┌─────────────────────────────────────────────────────────┐
+│ Camera Stream Active                                    │
+│ Frame Buffer Queue:                                     │
+│  ┌──────────────────┐                                   │
+│  │ Frame 1 → Frame 2 │ → Encoder → MP4 File           │
+│  │ Frame 3 → Frame 4 │                                 │
+│  └──────────────────┘                                   │
+└────────────┬────────────────────────────────────────────┘
+             │
+        (while recording)
+             │
+             ▼
+┌─────────────────────────────────────────────────────────┐
+│ RecordingStatusChanged Event (mỗi 100ms)               │
+│ - Duration: 00:01:23                                   │
+│ - FileSize: 45.2 MB                                    │
+│ - CurrentFPS: 29.8                                     │
+│ - FrameCount: 2394                                     │
+│ → Update UI Progress Bar                               │
+└────────────┬────────────────────────────────────────────┘
+             │
+        (user nhấn Stop)
+             │
+             ▼
+┌─────────────────────────────────────────────────────────┐
+│ RecordingService.StopRecordingAsync()                  │
+│ - Finalize MP4 file (write header)                     │
+│ - Close encoder & file stream                          │
+│ - Stop capture thread                                  │
+│ - Return file path                                     │
+└────────────┬────────────────────────────────────────────┘
+             │
+             ▼
+┌─────────────────────────────────────────────────────────┐
+│ RecordingCompleted Event                                │
+│ - FilePath: "C:\Videos\2025-12-08_14-30-45.mp4"       │
+│ - FileSize: 125.8 MB                                   │
+│ - Duration: 00:05:42                                   │
+│ → Show success message + Open file location button     │
+└─────────────────────────────────────────────────────────┘
+
+LUỒNG 2: CHỤP HÌNH
+────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────┐
+│ USER NHẤN "TAKE SCREENSHOT" BUTTON                      │
+└────────────┬────────────────────────────────────────────┘
+             │
+             ▼
+┌─────────────────────────────────────────────────────────┐
+│ ScreenshotService.TakeScreenshotAsync()                │
+│ - Get current frame from camera                        │
+│ - Validate ScreenshotConfig                            │
+└────────────┬────────────────────────────────────────────┘
+             │
+             ▼
+┌─────────────────────────────────────────────────────────┐
+│ Convert frame to bitmap                                 │
+│ D3D Surface → WritableBitmap → BitmapImage            │
+└────────────┬────────────────────────────────────────────┘
+             │
+             ▼
+┌─────────────────────────────────────────────────────────┐
+│ Apply image format & quality                           │
+│ - If PNG: lossless compression                         │
+│ - If JPG: quality setting (1-100)                      │
+│ - If BMP: raw bitmap                                   │
+└────────────┬────────────────────────────────────────────┘
+             │
+             ▼
+┌─────────────────────────────────────────────────────────┐
+│ Generate filename with timestamp                        │
+│ "Screenshot_2025-12-08_14-30-45.png"                   │
+└────────────┬────────────────────────────────────────────┘
+             │
+             ▼
+┌─────────────────────────────────────────────────────────┐
+│ Save to disk                                            │
+│ Path: "C:\Users\[User]\Pictures\[filename]"            │
+└────────────┬────────────────────────────────────────────┘
+             │
+             ▼
+┌─────────────────────────────────────────────────────────┐
+│ ScreenshotTaken Event                                   │
+│ - FilePath: "C:\Users\[User]\Pictures\..."             │
+│ - FileSize: 2.3 MB                                     │
+│ - Timestamp: 2025-12-08 14:30:45                       │
+│ → Show success message + Thumbnail preview             │
+└─────────────────────────────────────────────────────────┘
+
+================================================================================
+💾 CẤU TRÚC THƯ MỤC CUỐI CÙNG
+================================================================================
+
+📦 CameraRecordingService/ (Class Library)
+│
+├── 📁 Models/
+│   ├── RecordingConfig.cs
+│   ├── ScreenshotConfig.cs
+│   ├── RecordingStatus.cs
+│   └── ScreenshotResult.cs
+│
+├── 📁 Enums/
+│   ├── VideoCodec.cs
+│   └── ImageFormat.cs
+│
+├── 📁 Interfaces/
+│   ├── IRecordingService.cs
+│   └── IScreenshotService.cs
+│
+├── 📁 Services/
+│   ├── RecordingService.cs
+│   ├── ScreenshotService.cs
+│   ├── VideoEncodingService.cs
+│   └── MediaFrameService.cs
+│
+├── 📁 Helpers/
+│   ├── FilePathHelper.cs
+│   ├── MediaValidationHelper.cs
+│   ├── TimestampHelper.cs
+│   └── DiskSpaceHelper.cs
+│
+├── 📁 Exceptions/
+│   ├── RecordingException.cs
+│   └── ScreenshotException.cs
+│
+├── 📁 Config/
+│   ├── RecordingDefaults.cs
+│   └── ScreenshotDefaults.cs
+│
+└── CameraRecordingService.csproj
+
+📦 CameraRecordingService.Tests/
+│
+├── RecordingServiceTests.cs
+├── ScreenshotServiceTests.cs
+├── VideoEncodingTests.cs
+└── HelperTests.cs
+
+📦 RecordingServiceDemo/ (WPF Sample App)
+│
+├── Models/
+│   └── UIViewModel.cs
+│
+├── Forms/
+│   ├── RecordingDemoForm.xaml
+│   └── RecordingDemoForm.xaml.cs
+│
+├── Views/
+│   ├── RecordingControlPanel.xaml
+│   └── ScreenshotControlPanel.xaml
+│
+├── App.xaml
+└── RecordingServiceDemo.csproj
+
+================================================================================
+🔧 CÔNG NGHỆ SỬ DỤNG
+================================================================================
+
+Framework:      .NET 8
+UI:             WPF / XAML
+Encoding:       Media Foundation (Windows API)
+Image Processing: System.Drawing / ImageSharp (optional)
+Logging:        Serilog / NLog
+Unit Testing:   xUnit / NUnit
+Code Quality:   SonarAnalyzer, FxCopAnalyzers
+
+================================================================================
+✅ CHECKLIST GIAO HÀNG
+================================================================================
+
+📋 Code Quality:
+  ☐ Tất cả code theo chuẩn C# best practices
+  ☐ XML documentation cho public methods
+  ☐ No compiler warnings
+  ☐ Code coverage > 80%
+
+📋 Functionality:
+  ☐ Recording MP4 hoạt động hoàn toàn
+  ☐ Screenshot tất cả format (PNG, JPG, BMP)
+  ☐ Error handling toàn diện
+  ☐ Performance acceptable (< 15% CPU)
+  ☐ Memory leak testing passed
+
+📋 Documentation:
+  ☐ API Documentation (XML comments)
+  ☐ User Guide (README.md)
+  ☐ Code examples
+  ☐ Architecture diagram
+  ☐ Troubleshooting guide
+
+📋 Testing:
+  ☐ Unit tests pass 100%
+  ☐ Integration tests pass
+  ☐ Manual testing on multiple cameras
+  ☐ Edge case testing
+
+📋 Sample App:
+  ☐ Demo app hoạt động
+  ☐ UI intuitive
+  ☐ All features accessible
+  ☐ Help documentation included
+
+================================================================================
+🎯 KỲ VỌNG KẾT QUẢ
+================================================================================
+
+Sau 3 tuần, sẽ có:
+
+✅ RecordingService hoàn chỉnh:
+   - Ghi hình MP4 chất lượng cao (H.264/H.265)
+   - Tunable bitrate, resolution, FPS
+   - Real-time status monitoring
+   - Error handling & recovery
+
+✅ ScreenshotService hoàn chỉnh:
+   - Chụp hình PNG/JPG/BMP
+   - Quality settings (JPG)
+   - Timestamp support
+   - Interval screenshot capability
+
+✅ Infrastructure:
+   - Dependency injection ready
+   - Unit tests > 80% coverage
+   - Logging & monitoring
+   - Documentation
+
+✅ Sample Demo App:
+   - Full-featured WPF application
+   - User-friendly UI
+   - Integration examples
+   - Troubleshooting guide
+
+================================================================================
+❓ CÂU HỎI XÁC NHẬN TRƯỚC KHI BẮT ĐẦU
+================================================================================
+
+1. Có cần hỗ trợ Audio recording không? (chỉ video hoặc video + âm thanh)
+2. H.265 codec có bắt buộc không? (hay chỉ cần H.264)
+3. File format khác MP4 có cần không? (AVI, MOV, MKV?)
+4. Có cần chia sẻ liên kết tới CameraConfigDemo không?
+5. Có cần cloud storage support (OneDrive, Google Drive)?
+
+================================================================================
+✍️ NGÀY TẠO: 08/12/2025
+📝 PHIÊN BẢN: 1.0
+================================================================================

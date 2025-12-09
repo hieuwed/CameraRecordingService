@@ -1,0 +1,783 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>CameraRecordingService</name>
+    </assembly>
+    <members>
+        <member name="T:CameraRecordingService.Config.RecordingDefaults">
+            <summary>
+            Default values and constants for recording
+            </summary>
+        </member>
+        <member name="F:CameraRecordingService.Config.RecordingDefaults.DEFAULT_VIDEO_CODEC">
+            <summary>
+            Default video codec
+            </summary>
+        </member>
+        <member name="F:CameraRecordingService.Config.RecordingDefaults.DEFAULT_BITRATE">
+            <summary>
+            Default bitrate in kbps (5 Mbps)
+            </summary>
+        </member>
+        <member name="F:CameraRecordingService.Config.RecordingDefaults.DEFAULT_OUTPUT_PATH">
+            <summary>
+            Default output path (Videos folder)
+            </summary>
+        </member>
+        <member name="F:CameraRecordingService.Config.RecordingDefaults.SUPPORTED_CODECS">
+            <summary>
+            Supported video codecs
+            </summary>
+        </member>
+        <member name="F:CameraRecordingService.Config.RecordingDefaults.MIN_BITRATE">
+            <summary>
+            Minimum bitrate in kbps
+            </summary>
+        </member>
+        <member name="F:CameraRecordingService.Config.RecordingDefaults.MAX_BITRATE">
+            <summary>
+            Maximum bitrate in kbps
+            </summary>
+        </member>
+        <member name="F:CameraRecordingService.Config.RecordingDefaults.MAX_RECORDING_DURATION">
+            <summary>
+            Maximum recording duration (12 hours)
+            </summary>
+        </member>
+        <member name="F:CameraRecordingService.Config.RecordingDefaults.DEFAULT_WIDTH">
+            <summary>
+            Default resolution width
+            </summary>
+        </member>
+        <member name="F:CameraRecordingService.Config.RecordingDefaults.DEFAULT_HEIGHT">
+            <summary>
+            Default resolution height
+            </summary>
+        </member>
+        <member name="F:CameraRecordingService.Config.RecordingDefaults.DEFAULT_FPS">
+            <summary>
+            Default frames per second
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Config.ScreenshotDefaults">
+            <summary>
+            Default values and constants for screenshots
+            </summary>
+        </member>
+        <member name="F:CameraRecordingService.Config.ScreenshotDefaults.DEFAULT_IMAGE_FORMAT">
+            <summary>
+            Default image format
+            </summary>
+        </member>
+        <member name="F:CameraRecordingService.Config.ScreenshotDefaults.DEFAULT_OUTPUT_PATH">
+            <summary>
+            Default output path (Pictures folder)
+            </summary>
+        </member>
+        <member name="F:CameraRecordingService.Config.ScreenshotDefaults.SUPPORTED_FORMATS">
+            <summary>
+            Supported image formats
+            </summary>
+        </member>
+        <member name="F:CameraRecordingService.Config.ScreenshotDefaults.DEFAULT_JPG_QUALITY">
+            <summary>
+            Default JPG quality (1-100)
+            </summary>
+        </member>
+        <member name="F:CameraRecordingService.Config.ScreenshotDefaults.MIN_INTERVAL_SCREENSHOT">
+            <summary>
+            Minimum interval for interval screenshots
+            </summary>
+        </member>
+        <member name="F:CameraRecordingService.Config.ScreenshotDefaults.MAX_INTERVAL_SCREENSHOT">
+            <summary>
+            Maximum interval for interval screenshots
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Enums.ImageFormat">
+            <summary>
+            Image format types supported for screenshots
+            </summary>
+        </member>
+        <member name="F:CameraRecordingService.Enums.ImageFormat.PNG">
+            <summary>
+            PNG format (lossless compression)
+            </summary>
+        </member>
+        <member name="F:CameraRecordingService.Enums.ImageFormat.JPG">
+            <summary>
+            JPG format (lossy compression, smaller size)
+            </summary>
+        </member>
+        <member name="F:CameraRecordingService.Enums.ImageFormat.BMP">
+            <summary>
+            BMP format (no compression, largest size)
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Enums.VideoCodec">
+            <summary>
+            Video codec types supported for recording
+            </summary>
+        </member>
+        <member name="F:CameraRecordingService.Enums.VideoCodec.H264">
+            <summary>
+            H.264 codec (most compatible)
+            </summary>
+        </member>
+        <member name="F:CameraRecordingService.Enums.VideoCodec.H265">
+            <summary>
+            H.265 codec (better compression)
+            </summary>
+        </member>
+        <member name="F:CameraRecordingService.Enums.VideoCodec.MJPEG">
+            <summary>
+            MJPEG codec (simple, larger files)
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Events.RecordingErrorEventArgs">
+            <summary>
+            Event arguments for recording errors
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Events.RecordingErrorEventArgs.ErrorMessage">
+            <summary>
+            Error message
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Events.RecordingErrorEventArgs.Exception">
+            <summary>
+            Exception that caused the error
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Events.RecordingEventArgs">
+            <summary>
+            Event arguments for recording status changes
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Events.RecordingEventArgs.Status">
+            <summary>
+            Current recording status
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Events.ScreenshotEventArgs">
+            <summary>
+            Event arguments for screenshot events
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Events.ScreenshotEventArgs.Result">
+            <summary>
+            Screenshot result
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Exceptions.RecordingException">
+            <summary>
+            Base exception for recording-related errors
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Exceptions.RecordingAlreadyInProgressException">
+            <summary>
+            Exception thrown when trying to start recording while already recording
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Exceptions.RecordingNotStartedException">
+            <summary>
+            Exception thrown when trying to stop recording that hasn't started
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Exceptions.CodecNotSupportedException">
+            <summary>
+            Exception thrown when codec is not supported
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Exceptions.InvalidRecordingConfigException">
+            <summary>
+            Exception thrown when recording configuration is invalid
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Exceptions.DiskSpaceInsufficientException">
+            <summary>
+            Exception thrown when disk space is insufficient
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Exceptions.CameraDisconnectedException">
+            <summary>
+            Exception thrown when camera is disconnected during recording
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Exceptions.MediaFoundationException">
+            <summary>
+            Exception thrown when Media Foundation encounters an error
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Exceptions.ScreenshotException">
+            <summary>
+            Base exception for screenshot-related errors
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Exceptions.InvalidScreenshotConfigException">
+            <summary>
+            Exception thrown when screenshot configuration is invalid
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Exceptions.ImageFormatNotSupportedException">
+            <summary>
+            Exception thrown when image format is not supported
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Exceptions.CameraFrameUnavailableException">
+            <summary>
+            Exception thrown when camera frame is unavailable
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Exceptions.FileWriteException">
+            <summary>
+            Exception thrown when file write fails
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Exceptions.ScreenshotSaveFailedException">
+            <summary>
+            Exception thrown when screenshot save fails
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Helpers.DiskSpaceHelper">
+            <summary>
+            Helper class for disk space operations
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Helpers.DiskSpaceHelper.EstimateRecordingSize(System.TimeSpan,System.Int32)">
+            <summary>
+            Estimate recording size based on duration and bitrate
+            </summary>
+            <param name="duration">Recording duration</param>
+            <param name="bitrate">Bitrate in kbps</param>
+            <returns>Estimated size in bytes</returns>
+        </member>
+        <member name="M:CameraRecordingService.Helpers.DiskSpaceHelper.CheckDiskSpace(System.String,System.Int64)">
+            <summary>
+            Check if there's enough disk space
+            </summary>
+            <param name="path">Path to check</param>
+            <param name="requiredBytes">Required space in bytes</param>
+            <exception cref="T:CameraRecordingService.Exceptions.DiskSpaceInsufficientException">Thrown when disk space is insufficient</exception>
+        </member>
+        <member name="M:CameraRecordingService.Helpers.DiskSpaceHelper.GetDriveFreeSpace(System.String)">
+            <summary>
+            Get free space on drive containing the path
+            </summary>
+            <param name="path">Path to check</param>
+            <returns>Free space in bytes</returns>
+        </member>
+        <member name="T:CameraRecordingService.Helpers.FilePathHelper">
+            <summary>
+            Helper class for file path operations
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Helpers.FilePathHelper.GenerateUniqueFileName(System.String,System.String,System.String)">
+            <summary>
+            Generate a unique filename by appending a number if file exists
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Helpers.FilePathHelper.EnsureDirectoryExists(System.String)">
+            <summary>
+            Ensure directory exists, create if it doesn't
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Helpers.FilePathHelper.IsPathValid(System.String)">
+            <summary>
+            Check if path is valid
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Helpers.FilePathHelper.IsFileWritable(System.String)">
+            <summary>
+            Check if file is writable
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Helpers.FilePathHelper.GetDefaultSaveFolder(System.Boolean)">
+            <summary>
+            Get default save folder based on type
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Helpers.MediaValidationHelper">
+            <summary>
+            Helper class for media validation
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Helpers.MediaValidationHelper.ValidateResolution(System.Int32,System.Int32)">
+            <summary>
+            Validate resolution
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Helpers.MediaValidationHelper.ValidateFPS(System.Int32)">
+            <summary>
+            Validate FPS
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Helpers.MediaValidationHelper.ValidateBitrate(System.Int32,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Validate bitrate
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Helpers.MediaValidationHelper.IsCodecSupported(CameraRecordingService.Enums.VideoCodec)">
+            <summary>
+            Check if codec is supported
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Helpers.MediaValidationHelper.IsImageFormatSupported(CameraRecordingService.Enums.ImageFormat)">
+            <summary>
+            Check if image format is supported
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Helpers.TimestampHelper">
+            <summary>
+            Helper class for timestamp operations
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Helpers.TimestampHelper.GenerateTimestamp">
+            <summary>
+            Generate timestamp string for filenames (2025-12-08_15-30-45)
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Helpers.TimestampHelper.FormatDuration(System.TimeSpan)">
+            <summary>
+            Format duration as HH:MM:SS
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Helpers.TimestampHelper.GetHumanReadableFileSize(System.Int64)">
+            <summary>
+            Get human-readable file size (e.g., "125.5 MB")
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Helpers.TimestampHelper.AddTimestampToFileName(System.String)">
+            <summary>
+            Add timestamp to filename
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Interfaces.IRecordingService">
+            <summary>
+            Interface for video recording service
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Interfaces.IRecordingService.StartRecordingAsync(CameraRecordingService.Interfaces.IVideoFrameProvider,CameraRecordingService.Models.RecordingConfig)">
+            <summary>
+            Start recording from camera
+            </summary>
+            <param name="frameProvider">Video frame provider</param>
+            <param name="config">Recording configuration</param>
+            <returns>True if recording started successfully</returns>
+        </member>
+        <member name="M:CameraRecordingService.Interfaces.IRecordingService.StopRecordingAsync">
+            <summary>
+            Stop recording and return file path
+            </summary>
+            <returns>Path to the recorded file</returns>
+        </member>
+        <member name="M:CameraRecordingService.Interfaces.IRecordingService.PauseRecordingAsync">
+            <summary>
+            Pause recording (advanced feature)
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Interfaces.IRecordingService.ResumeRecordingAsync">
+            <summary>
+            Resume recording (advanced feature)
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Interfaces.IRecordingService.GetRecordingStatusAsync">
+            <summary>
+            Get current recording status
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Interfaces.IRecordingService.IsRecording">
+            <summary>
+            Whether recording is currently active
+            </summary>
+        </member>
+        <member name="E:CameraRecordingService.Interfaces.IRecordingService.OnRecordingStatusChanged">
+            <summary>
+            Event: Recording status changed
+            </summary>
+        </member>
+        <member name="E:CameraRecordingService.Interfaces.IRecordingService.OnRecordingError">
+            <summary>
+            Event: Recording error occurred
+            </summary>
+        </member>
+        <member name="E:CameraRecordingService.Interfaces.IRecordingService.OnRecordingCompleted">
+            <summary>
+            Event: Recording completed
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Interfaces.IScreenshotService">
+            <summary>
+            Interface for screenshot service
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Interfaces.IScreenshotService.TakeScreenshotAsync(CameraRecordingService.Interfaces.IVideoFrameProvider,CameraRecordingService.Models.ScreenshotConfig)">
+            <summary>
+            Take a single screenshot from camera
+            </summary>
+            <param name="frameProvider">Video frame provider</param>
+            <param name="config">Screenshot configuration</param>
+            <returns>Screenshot result</returns>
+        </member>
+        <member name="M:CameraRecordingService.Interfaces.IScreenshotService.StartIntervalScreenshotAsync(CameraRecordingService.Interfaces.IVideoFrameProvider,CameraRecordingService.Models.ScreenshotConfig,System.TimeSpan)">
+            <summary>
+            Start taking screenshots at regular intervals
+            </summary>
+            <param name="frameProvider">Video frame provider</param>
+            <param name="config">Screenshot configuration</param>
+            <param name="interval">Time interval between screenshots</param>
+        </member>
+        <member name="M:CameraRecordingService.Interfaces.IScreenshotService.StopIntervalScreenshotAsync">
+            <summary>
+            Stop interval screenshot
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Interfaces.IScreenshotService.IsCapturingInterval">
+            <summary>
+            Whether interval screenshot is currently active
+            </summary>
+        </member>
+        <member name="E:CameraRecordingService.Interfaces.IScreenshotService.OnScreenshotTaken">
+            <summary>
+            Event: Screenshot taken successfully
+            </summary>
+        </member>
+        <member name="E:CameraRecordingService.Interfaces.IScreenshotService.OnScreenshotError">
+            <summary>
+            Event: Screenshot error occurred
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Interfaces.IVideoFrameProvider">
+            <summary>
+            Interface for providing video frames from camera
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Interfaces.IVideoFrameProvider.GetCurrentFrameAsync">
+            <summary>
+            Get the current frame from camera
+            </summary>
+            <returns>Frame object (can be Bitmap, byte[], or custom frame type)</returns>
+        </member>
+        <member name="P:CameraRecordingService.Interfaces.IVideoFrameProvider.IsActive">
+            <summary>
+            Whether the camera is currently active
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Interfaces.IVideoFrameProvider.Resolution">
+            <summary>
+            Frame resolution (width, height)
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Models.RecordingConfig">
+            <summary>
+            Configuration for video recording
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Models.RecordingConfig.OutputPath">
+            <summary>
+            Output directory path for the recording file
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Models.RecordingConfig.FileName">
+            <summary>
+            File name (without extension)
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Models.RecordingConfig.VideoCodec">
+            <summary>
+            Video codec to use (H.264 or H.265)
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Models.RecordingConfig.Bitrate">
+            <summary>
+            Video bitrate in kilobits per second (affects quality and file size)
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Models.RecordingConfig.Width">
+            <summary>
+            Video width in pixels
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Models.RecordingConfig.Height">
+            <summary>
+            Video height in pixels
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Models.RecordingConfig.FramesPerSecond">
+            <summary>
+            Frames per second
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Models.RecordingConfig.MaxDuration">
+            <summary>
+            Maximum recording duration (null = unlimited)
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Models.RecordingConfig.EnableAudio">
+            <summary>
+            Enable audio recording
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Models.RecordingConfig.AudioSampleRate">
+            <summary>
+            Audio sample rate (44100 or 48000 Hz)
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Models.RecordingStatus">
+            <summary>
+            Current status of recording operation
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Models.RecordingStatus.IsRecording">
+            <summary>
+            Whether recording is currently active
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Models.RecordingStatus.Duration">
+            <summary>
+            Duration of recording so far
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Models.RecordingStatus.FileSize">
+            <summary>
+            Current file size in bytes
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Models.RecordingStatus.FrameCount">
+            <summary>
+            Number of frames recorded
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Models.RecordingStatus.CurrentFPS">
+            <summary>
+            Current frames per second
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Models.RecordingStatus.StatusMessage">
+            <summary>
+            Status message
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Models.RecordingStatus.UpdatedAt">
+            <summary>
+            Last update timestamp
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Models.ScreenshotConfig">
+            <summary>
+            Configuration for taking screenshots
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Models.ScreenshotConfig.OutputPath">
+            <summary>
+            Output directory path for the screenshot file
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Models.ScreenshotConfig.FileName">
+            <summary>
+            File name (without extension)
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Models.ScreenshotConfig.ImageFormat">
+            <summary>
+            Image format (PNG, JPG, or BMP)
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Models.ScreenshotConfig.Quality">
+            <summary>
+            JPEG quality (1-100, only applies to JPG format)
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Models.ScreenshotConfig.AddTimestamp">
+            <summary>
+            Add timestamp to filename
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Models.ScreenshotResult">
+            <summary>
+            Result of a screenshot operation
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Models.ScreenshotResult.Success">
+            <summary>
+            Whether the screenshot was successful
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Models.ScreenshotResult.FilePath">
+            <summary>
+            Full path to the saved screenshot file
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Models.ScreenshotResult.FileSize">
+            <summary>
+            File size in bytes
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Models.ScreenshotResult.Timestamp">
+            <summary>
+            Timestamp when screenshot was taken
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Models.ScreenshotResult.ErrorMessage">
+            <summary>
+            Error message if screenshot failed
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Providers.ScreenRecordingProvider">
+            <summary>
+            Screen recording provider using Windows GDI
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Providers.ScreenRecordingProvider.IsActive">
+            <summary>
+            Whether screen capture is active
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Providers.ScreenRecordingProvider.Resolution">
+            <summary>
+            Screen resolution
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Providers.ScreenRecordingProvider.Initialize">
+            <summary>
+            Initialize screen capture
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Providers.ScreenRecordingProvider.Initialize(System.Int32,System.Int32)">
+            <summary>
+            Initialize with custom resolution (will scale screen capture)
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Providers.ScreenRecordingProvider.GetCurrentFrameAsync">
+            <summary>
+            Capture current screen frame
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Providers.ScreenRecordingProvider.BitmapToMat(System.Drawing.Bitmap)">
+            <summary>
+            Convert System.Drawing.Bitmap to OpenCV Mat
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Providers.WebcamFrameProvider">
+            <summary>
+            Webcam frame provider using OpenCV
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Providers.WebcamFrameProvider.IsActive">
+            <summary>
+            Whether the camera is currently active
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Providers.WebcamFrameProvider.Resolution">
+            <summary>
+            Frame resolution (width, height)
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Providers.WebcamFrameProvider.#ctor(System.Int32)">
+            <summary>
+            Create webcam frame provider
+            </summary>
+            <param name="cameraIndex">Camera index (0 = default camera)</param>
+        </member>
+        <member name="M:CameraRecordingService.Providers.WebcamFrameProvider.Initialize(System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Initialize and open the camera
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Providers.WebcamFrameProvider.GetCurrentFrameAsync">
+            <summary>
+            Get current frame from camera
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Providers.WebcamFrameProvider.Dispose">
+            <summary>
+            Release camera resources
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Services.FFmpegRecordingService">
+            <summary>
+            Recording service using FFmpeg for H.265/MP4 encoding
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Services.RealRecordingService">
+            <summary>
+            Service for video recording with real encoding
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Services.RecordingService">
+            <summary>
+            Service for video recording (stub implementation)
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Services.RecordingService.StartRecordingAsync(CameraRecordingService.Interfaces.IVideoFrameProvider,CameraRecordingService.Models.RecordingConfig)">
+            <summary>
+            Start recording from camera
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Services.RecordingService.StopRecordingAsync">
+            <summary>
+            Stop recording
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Services.RecordingService.PauseRecordingAsync">
+            <summary>
+            Pause recording (stub)
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Services.RecordingService.ResumeRecordingAsync">
+            <summary>
+            Resume recording (stub)
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Services.RecordingService.GetRecordingStatusAsync">
+            <summary>
+            Get current recording status
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Services.ScreenshotService">
+            <summary>
+            Service for taking screenshots (stub implementation)
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Services.ScreenshotService.TakeScreenshotAsync(CameraRecordingService.Interfaces.IVideoFrameProvider,CameraRecordingService.Models.ScreenshotConfig)">
+            <summary>
+            Take a single screenshot
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Services.ScreenshotService.StartIntervalScreenshotAsync(CameraRecordingService.Interfaces.IVideoFrameProvider,CameraRecordingService.Models.ScreenshotConfig,System.TimeSpan)">
+            <summary>
+            Start taking screenshots at intervals
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Services.ScreenshotService.StopIntervalScreenshotAsync">
+            <summary>
+            Stop interval screenshot
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Services.VideoEncodingService">
+            <summary>
+            Video encoding service using OpenCV VideoWriter
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Services.VideoEncodingService.IsEncoding">
+            <summary>
+            Whether encoding is currently active
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Services.VideoEncodingService.Initialize(System.String,System.Int32,System.Int32,System.Double,CameraRecordingService.Enums.VideoCodec)">
+            <summary>
+            Initialize video writer
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Services.VideoEncodingService.WriteFrameAsync(System.Object)">
+            <summary>
+            Write a frame to the video file
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Services.VideoEncodingService.Finalize">
+            <summary>
+            Finalize and close the video file
+            </summary>
+        </member>
+    </members>
+</doc>

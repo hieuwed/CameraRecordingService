@@ -1,0 +1,204 @@
+﻿<Window x:Class="RecordingServiceDemo.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:RecordingServiceDemo"
+        mc:Ignorable="d"
+        Title="Camera Recording Service Demo" Height="600" Width="900"
+        Background="#F5F5F5">
+    
+    <Window.Resources>
+        <!-- Colors -->
+        <SolidColorBrush x:Key="PrimaryBrush" Color="#2196F3"/>
+        <SolidColorBrush x:Key="SuccessBrush" Color="#4CAF50"/>
+        <SolidColorBrush x:Key="DangerBrush" Color="#F44336"/>
+        <SolidColorBrush x:Key="WarningBrush" Color="#FF9800"/>
+        
+        <!-- Button Style -->
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="20,10"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="4" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Opacity" Value="0.9"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.6"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+    
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <Border Grid.Row="0" Background="{StaticResource PrimaryBrush}" 
+                Padding="20" CornerRadius="8" Margin="0,0,0,20">
+            <StackPanel>
+                <TextBlock Text="Camera Recording Service Demo" 
+                          FontSize="24" FontWeight="Bold" 
+                          Foreground="White"/>
+                <TextBlock Text="Test recording and screenshot functionality" 
+                          FontSize="14" Foreground="White" 
+                          Opacity="0.9" Margin="0,5,0,0"/>
+            </StackPanel>
+        </Border>
+        
+        <!-- Main Content -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                
+                <!-- Recording Section -->
+                <Border Background="White" Padding="20" CornerRadius="8" Margin="0,0,0,15">
+                    <StackPanel>
+                        <TextBlock Text="📹 Video Recording" FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
+                        
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <!-- Recording Controls -->
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                <TextBlock Text="Recording Source:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                                    <RadioButton x:Name="CameraSourceRadio" 
+                                                Content="📹 Camera" 
+                                                IsChecked="True" 
+                                                GroupName="RecordingSource"
+                                                Margin="0,0,20,0"/>
+                                    <RadioButton x:Name="ScreenSourceRadio" 
+                                                Content="🖥️ Screen" 
+                                                GroupName="RecordingSource"/>
+                                </StackPanel>
+                                
+                                <TextBlock Text="Output Folder:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                <TextBox x:Name="RecordingOutputPath" 
+                                        Text="C:\Recordings" 
+                                        Padding="8" Margin="0,0,0,10"/>
+                                
+                                <TextBlock Text="File Name:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                <TextBox x:Name="RecordingFileName" 
+                                        Text="recording" 
+                                        Padding="8" Margin="0,0,0,10"/>
+                                
+                                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                    <Button x:Name="StartRecordingButton" 
+                                           Content="▶ Start Recording" 
+                                           Style="{StaticResource PrimaryButton}"
+                                           Click="StartRecordingButton_Click"
+                                           Margin="0,0,10,0"/>
+                                    <Button x:Name="StopRecordingButton" 
+                                           Content="⏹ Stop Recording" 
+                                           Style="{StaticResource PrimaryButton}"
+                                           Background="{StaticResource DangerBrush}"
+                                           Click="StopRecordingButton_Click"
+                                           IsEnabled="False"/>
+                                </StackPanel>
+                            </StackPanel>
+                            
+                            <!-- Recording Status -->
+                            <Border Grid.Column="1" Background="#F9F9F9" 
+                                   Padding="15" CornerRadius="4" Margin="10,0,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="Status" FontWeight="Bold" Margin="0,0,0,10"/>
+                                    <TextBlock x:Name="RecordingStatusText" 
+                                              Text="Ready" 
+                                              FontSize="12" Margin="0,0,0,5"/>
+                                    <TextBlock x:Name="RecordingDurationText" 
+                                              Text="Duration: 00:00:00" 
+                                              FontSize="12" Margin="0,0,0,5"/>
+                                    <TextBlock x:Name="RecordingFrameCountText" 
+                                              Text="Frames: 0" 
+                                              FontSize="12" Margin="0,0,0,5"/>
+                                    <TextBlock x:Name="RecordingFpsText" 
+                                              Text="FPS: 0.0" 
+                                              FontSize="12"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+                
+                <!-- Screenshot Section -->
+                <Border Background="White" Padding="20" CornerRadius="8">
+                    <StackPanel>
+                        <TextBlock Text="📸 Screenshot" FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
+                        
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <!-- Screenshot Controls -->
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                <TextBlock Text="Output Folder:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                <TextBox x:Name="ScreenshotOutputPath" 
+                                        Text="C:\Screenshots" 
+                                        Padding="8" Margin="0,0,0,10"/>
+                                
+                                <TextBlock Text="File Name:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                <TextBox x:Name="ScreenshotFileName" 
+                                        Text="screenshot" 
+                                        Padding="8" Margin="0,0,0,10"/>
+                                
+                                <Button x:Name="TakeScreenshotButton" 
+                                       Content="📷 Take Screenshot" 
+                                       Style="{StaticResource PrimaryButton}"
+                                       Background="{StaticResource SuccessBrush}"
+                                       Click="TakeScreenshotButton_Click"
+                                       Margin="0,10,0,0"/>
+                            </StackPanel>
+                            
+                            <!-- Screenshot Status -->
+                            <Border Grid.Column="1" Background="#F9F9F9" 
+                                   Padding="15" CornerRadius="4" Margin="10,0,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="Last Screenshot" FontWeight="Bold" Margin="0,0,0,10"/>
+                                    <TextBlock x:Name="ScreenshotStatusText" 
+                                              Text="No screenshot taken yet" 
+                                              FontSize="12" 
+                                              TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+                
+            </StackPanel>
+        </ScrollViewer>
+        
+        <!-- Footer -->
+        <Border Grid.Row="2" Background="#E0E0E0" 
+                Padding="15" CornerRadius="4" Margin="0,20,0,0">
+            <TextBlock x:Name="FooterText" 
+                      Text="Ready to use. Library version: 1.0.0" 
+                      FontSize="12" 
+                      Foreground="#666"/>
+        </Border>
+    </Grid>
+</Window>
