@@ -55,8 +55,11 @@ namespace CameraRecordingService.Providers
         {
             try
             {
-                _screenWidth = width;
-                _screenHeight = height;
+                // Use actual screen resolution for better performance
+                // Resizing during capture is very slow
+                var bounds = System.Windows.Forms.Screen.PrimaryScreen.Bounds;
+                _screenWidth = bounds.Width;
+                _screenHeight = bounds.Height;
                 _isActive = true;
                 return true;
             }
@@ -100,16 +103,8 @@ namespace CameraRecordingService.Providers
 
                             // Convert to OpenCV Mat
                             var mat = BitmapToMat(bitmap);
-
-                            // Resize if needed
-                            if (bounds.Width != _screenWidth || bounds.Height != _screenHeight)
-                            {
-                                var resized = new Mat();
-                                Cv2.Resize(mat, resized, new OpenCvSharp.Size(_screenWidth, _screenHeight));
-                                mat.Dispose();
-                                return resized;
-                            }
-
+                            
+                            // Return mat directly at native resolution for best performance
                             return mat;
                         }
                     }

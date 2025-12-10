@@ -32,3 +32,4 @@ D:\QA\CameraRecordingService\RecordingServiceDemo\bin\Debug\net8.0-windows\Syste
 D:\QA\CameraRecordingService\RecordingServiceDemo\bin\Debug\net8.0-windows\System.Private.Windows.GdiPlus.dll
 D:\QA\CameraRecordingService\RecordingServiceDemo\bin\Debug\net8.0-windows\runtimes\win\lib\net8.0\Microsoft.Win32.SystemEvents.dll
 D:\QA\CameraRecordingService\RecordingServiceDemo\bin\Debug\net8.0-windows\Xabe.FFmpeg.dll
+D:\QA\CameraRecordingService\RecordingServiceDemo\obj\Debug\net8.0-windows\RecordingServiceDemo.sourcelink.json

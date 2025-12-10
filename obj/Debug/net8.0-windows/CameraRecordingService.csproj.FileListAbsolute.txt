@@ -10,3 +10,4 @@ D:\QA\CameraRecordingService\obj\Debug\net8.0-windows\refint\CameraRecordingServ
 D:\QA\CameraRecordingService\obj\Debug\net8.0-windows\CameraRecordingService.xml
 D:\QA\CameraRecordingService\obj\Debug\net8.0-windows\CameraRecordingService.pdb
 D:\QA\CameraRecordingService\obj\Debug\net8.0-windows\ref\CameraRecordingService.dll
+D:\QA\CameraRecordingService\obj\Debug\net8.0-windows\CameraRecordingService.sourcelink.json

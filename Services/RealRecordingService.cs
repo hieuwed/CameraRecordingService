@@ -73,7 +73,7 @@ namespace CameraRecordingService.Services
                 DiskSpaceHelper.CheckDiskSpace(config.OutputPath, estimatedSize);
 
                 // Generate output file path
-                string extension = "avi"; // Use AVI for better compatibility with MJPEG codec
+                string extension = "mp4"; // Use MP4 format
                 _outputFilePath = FilePathHelper.GenerateUniqueFileName(
                     config.OutputPath,
                     config.FileName,
