@@ -24,8 +24,8 @@ namespace RecordingServiceDemo
         {
             InitializeComponent();
             
-            // Initialize services - SIMPLE approach, no FFmpeg
-            _recordingService = new SimpleRecordingService();
+            // Initialize services - FINAL SIMPLE SOLUTION
+            _recordingService = new FinalRecordingService();
             _screenshotService = new ScreenshotService();
             
             // Initialize both camera and screen providers

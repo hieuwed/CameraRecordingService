@@ -694,6 +694,12 @@
             Release camera resources
             </summary>
         </member>
+        <member name="T:CameraRecordingService.Services.FinalRecordingService">
+            <summary>
+            ULTIMATE SIMPLE SOLUTION: Capture all frames, then write video with correct FPS
+            This GUARANTEES video duration = recording duration
+            </summary>
+        </member>
         <member name="T:CameraRecordingService.Services.ScreenshotService">
             <summary>
             Service for taking screenshots (stub implementation)
@@ -718,6 +724,12 @@
             <summary>
             SIMPLE recording service - no FFmpeg, no complexity
             Just record frames at realistic FPS directly to MP4
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Services.VFRRecordingService">
+            <summary>
+            Professional recording service using Variable Frame Rate (VFR) with timestamps
+            This ensures video duration matches recording time exactly, regardless of actual capture FPS
             </summary>
         </member>
     </members>
