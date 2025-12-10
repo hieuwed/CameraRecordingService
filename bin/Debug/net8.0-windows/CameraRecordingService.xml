@@ -720,17 +720,5 @@
             Stop interval screenshot
             </summary>
         </member>
-        <member name="T:CameraRecordingService.Services.SimpleRecordingService">
-            <summary>
-            SIMPLE recording service - no FFmpeg, no complexity
-            Just record frames at realistic FPS directly to MP4
-            </summary>
-        </member>
-        <member name="T:CameraRecordingService.Services.VFRRecordingService">
-            <summary>
-            Professional recording service using Variable Frame Rate (VFR) with timestamps
-            This ensures video duration matches recording time exactly, regardless of actual capture FPS
-            </summary>
-        </member>
     </members>
 </doc>
