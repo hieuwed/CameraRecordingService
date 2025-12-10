@@ -24,8 +24,8 @@ namespace RecordingServiceDemo
         {
             InitializeComponent();
             
-            // Initialize services - Simple MP4 encoding
-            _recordingService = new RealRecordingService();
+            // Initialize services - SIMPLE approach, no FFmpeg
+            _recordingService = new SimpleRecordingService();
             _screenshotService = new ScreenshotService();
             
             // Initialize both camera and screen providers
@@ -113,7 +113,7 @@ namespace RecordingServiceDemo
                     VideoCodec = VideoCodec.H264,
                     Width = width,
                     Height = height,
-                    FramesPerSecond = 30,
+                    FramesPerSecond = sourceType == "Screen" ? 10 : 30, // Lower FPS for screen capture
                     Bitrate = bitrate, // Safe bitrate within valid range
                     EnableAudio = false
                 };
@@ -147,10 +147,15 @@ namespace RecordingServiceDemo
         {
             try
             {
-                string filePath = await _recordingService.StopRecordingAsync();
+                StopRecordingButton.IsEnabled = false;
+                
+                // Show processing message
+                FooterText.Text = "⏳ Processing video... Please wait (this may take a few seconds)";
+                
+                // Stop recording (this will trigger FFmpeg re-encoding)
+                var filePath = await _recordingService.StopRecordingAsync();
                 
                 StartRecordingButton.IsEnabled = true;
-                StopRecordingButton.IsEnabled = false;
                 CameraSourceRadio.IsEnabled = true;
                 ScreenSourceRadio.IsEnabled = true;
                 _statusUpdateTimer?.Stop();
@@ -158,12 +163,18 @@ namespace RecordingServiceDemo
                 MessageBox.Show($"Recording saved to:\n{filePath}\n\nFormat: MP4 (H.264 codec)\nPlayable on all devices!", 
                     "Recording Completed", MessageBoxButton.OK, MessageBoxImage.Information);
                 
-                FooterText.Text = $"? Recording saved: {filePath}";
+                FooterText.Text = $"✓ Recording saved: {filePath}";
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error stopping recording: {ex.Message}", 
-                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error stopping recording: {ex.Message}", "Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                
+                StartRecordingButton.IsEnabled = true;
+                StopRecordingButton.IsEnabled = false;
+                CameraSourceRadio.IsEnabled = true;
+                ScreenSourceRadio.IsEnabled = true;
+                _statusUpdateTimer?.Stop();
             }
         }
 

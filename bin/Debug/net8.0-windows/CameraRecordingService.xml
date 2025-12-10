@@ -694,46 +694,6 @@
             Release camera resources
             </summary>
         </member>
-        <member name="T:CameraRecordingService.Services.FFmpegRecordingService">
-            <summary>
-            Recording service using FFmpeg for H.265/MP4 encoding
-            </summary>
-        </member>
-        <member name="T:CameraRecordingService.Services.RealRecordingService">
-            <summary>
-            Service for video recording with real encoding
-            </summary>
-        </member>
-        <member name="T:CameraRecordingService.Services.RecordingService">
-            <summary>
-            Service for video recording (stub implementation)
-            </summary>
-        </member>
-        <member name="M:CameraRecordingService.Services.RecordingService.StartRecordingAsync(CameraRecordingService.Interfaces.IVideoFrameProvider,CameraRecordingService.Models.RecordingConfig)">
-            <summary>
-            Start recording from camera
-            </summary>
-        </member>
-        <member name="M:CameraRecordingService.Services.RecordingService.StopRecordingAsync">
-            <summary>
-            Stop recording
-            </summary>
-        </member>
-        <member name="M:CameraRecordingService.Services.RecordingService.PauseRecordingAsync">
-            <summary>
-            Pause recording (stub)
-            </summary>
-        </member>
-        <member name="M:CameraRecordingService.Services.RecordingService.ResumeRecordingAsync">
-            <summary>
-            Resume recording (stub)
-            </summary>
-        </member>
-        <member name="M:CameraRecordingService.Services.RecordingService.GetRecordingStatusAsync">
-            <summary>
-            Get current recording status
-            </summary>
-        </member>
         <member name="T:CameraRecordingService.Services.ScreenshotService">
             <summary>
             Service for taking screenshots (stub implementation)
@@ -754,29 +714,10 @@
             Stop interval screenshot
             </summary>
         </member>
-        <member name="T:CameraRecordingService.Services.VideoEncodingService">
+        <member name="T:CameraRecordingService.Services.SimpleRecordingService">
             <summary>
-            Video encoding service using OpenCV VideoWriter
-            </summary>
-        </member>
-        <member name="P:CameraRecordingService.Services.VideoEncodingService.IsEncoding">
-            <summary>
-            Whether encoding is currently active
-            </summary>
-        </member>
-        <member name="M:CameraRecordingService.Services.VideoEncodingService.Initialize(System.String,System.Int32,System.Int32,System.Double,CameraRecordingService.Enums.VideoCodec)">
-            <summary>
-            Initialize video writer
-            </summary>
-        </member>
-        <member name="M:CameraRecordingService.Services.VideoEncodingService.WriteFrameAsync(System.Object)">
-            <summary>
-            Write a frame to the video file
-            </summary>
-        </member>
-        <member name="M:CameraRecordingService.Services.VideoEncodingService.Finalize">
-            <summary>
-            Finalize and close the video file
+            SIMPLE recording service - no FFmpeg, no complexity
+            Just record frames at realistic FPS directly to MP4
             </summary>
         </member>
     </members>

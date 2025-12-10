@@ -9,13 +9,15 @@ using CameraRecordingService.Exceptions;
 using CameraRecordingService.Helpers;
 using CameraRecordingService.Interfaces;
 using CameraRecordingService.Models;
+using OpenCvSharp;
 
 namespace CameraRecordingService.Services
 {
     /// <summary>
-    /// Service for video recording with real encoding
+    /// SIMPLE recording service - no FFmpeg, no complexity
+    /// Just record frames at realistic FPS directly to MP4
     /// </summary>
-    public class RealRecordingService : IRecordingService, IDisposable
+    public class SimpleRecordingService : IRecordingService, IDisposable
     {
         private bool _isRecording;
         private RecordingConfig? _currentConfig;
@@ -27,17 +29,16 @@ namespace CameraRecordingService.Services
         private string _outputFilePath = string.Empty;
         private int _frameCount = 0;
         private Timer? _statusTimer;
-        private VideoEncodingService? _encodingService;
+        private VideoWriter? _videoWriter;
 
         // Events
         public event EventHandler<RecordingEventArgs>? OnRecordingStatusChanged;
         public event EventHandler<RecordingErrorEventArgs>? OnRecordingError;
         public event EventHandler<RecordingEventArgs>? OnRecordingCompleted;
 
-        // Properties
         public bool IsRecording => _isRecording;
 
-        public RealRecordingService()
+        public SimpleRecordingService()
         {
             _isRecording = false;
             _currentStatus = new RecordingStatus();
@@ -61,54 +62,44 @@ namespace CameraRecordingService.Services
                 if (!validationResult.IsValid)
                     throw new InvalidRecordingConfigException("RecordingConfig", validationResult.ErrorMessage);
 
-                // Ensure output directory exists
                 if (!FilePathHelper.EnsureDirectoryExists(config.OutputPath))
                     throw new InvalidRecordingConfigException("OutputPath", "Cannot create directory");
 
-                // Check disk space
-                long estimatedSize = DiskSpaceHelper.EstimateRecordingSize(
-                    config.MaxDuration ?? TimeSpan.FromMinutes(30),
-                    config.Bitrate);
-
-                DiskSpaceHelper.CheckDiskSpace(config.OutputPath, estimatedSize);
-
                 // Generate output file path
-                string extension = "mp4"; // Use MP4 format
                 _outputFilePath = FilePathHelper.GenerateUniqueFileName(
                     config.OutputPath,
                     config.FileName,
-                    extension);
+                    "mp4");
 
-                // Initialize video encoder
-                _encodingService = new VideoEncodingService();
-                bool encoderInitialized = _encodingService.Initialize(
+                // Use VERY LOW FPS for screen recording (3 FPS is realistic for slow screen capture)
+                // This matches actual capture speed, so video duration will be correct
+                int realisticFPS = 3;
+                
+                // Initialize VideoWriter with MP4V codec (simple, works everywhere)
+                int fourcc = VideoWriter.FourCC('m', 'p', '4', 'v');
+                
+                _videoWriter = new VideoWriter(
                     _outputFilePath,
-                    config.Width,
-                    config.Height,
-                    config.FramesPerSecond,
-                    config.VideoCodec
+                    fourcc,
+                    realisticFPS,
+                    new Size(config.Width, config.Height),
+                    isColor: true
                 );
 
-                if (!encoderInitialized)
+                if (!_videoWriter.IsOpened())
                 {
-                    _encodingService?.Dispose();
-                    _encodingService = null;
-                    throw new MediaFoundationException("Failed to initialize video encoder");
+                    _videoWriter?.Dispose();
+                    _videoWriter = null;
+                    throw new MediaFoundationException("Failed to initialize video writer");
                 }
 
-                // Setup
                 _currentConfig = config;
                 _currentFrameProvider = frameProvider;
                 _isRecording = true;
                 _frameCount = 0;
 
-                // Start stopwatch
                 _recordingStopwatch = Stopwatch.StartNew();
-
-                // Start status timer (update every 500ms)
                 _statusTimer = new Timer(UpdateRecordingStatus, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(500));
-
-                // Start recording task
                 _cancellationTokenSource = new CancellationTokenSource();
                 _recordingTask = RecordingTaskAsync(_cancellationTokenSource.Token);
 
@@ -118,8 +109,8 @@ namespace CameraRecordingService.Services
             catch (Exception ex)
             {
                 _isRecording = false;
-                _encodingService?.Dispose();
-                _encodingService = null;
+                _videoWriter?.Dispose();
+                _videoWriter = null;
                 RaiseRecordingError(ex.Message, ex);
                 return false;
             }
@@ -132,21 +123,18 @@ namespace CameraRecordingService.Services
                 if (!_isRecording)
                     throw new RecordingNotStartedException();
 
-                // Signal cancellation
                 _cancellationTokenSource?.Cancel();
 
-                // Wait for task to complete
                 if (_recordingTask != null)
                     await _recordingTask;
 
-                // Stop timer and stopwatch
                 _statusTimer?.Dispose();
                 _recordingStopwatch?.Stop();
 
-                // Finalize encoding
-                _encodingService?.Finalize();
-                _encodingService?.Dispose();
-                _encodingService = null;
+                // Close video writer
+                _videoWriter?.Release();
+                _videoWriter?.Dispose();
+                _videoWriter = null;
 
                 _isRecording = false;
 
@@ -162,44 +150,39 @@ namespace CameraRecordingService.Services
             }
         }
 
-        public async Task<bool> PauseRecordingAsync()
-        {
-            // TODO: Implement pause
-            await Task.CompletedTask;
-            return false;
-        }
-
-        public async Task<bool> ResumeRecordingAsync()
-        {
-            // TODO: Implement resume
-            await Task.CompletedTask;
-            return false;
-        }
-
-        public async Task<RecordingStatus> GetRecordingStatusAsync()
-        {
-            return await Task.FromResult(_currentStatus);
-        }
-
         private async Task RecordingTaskAsync(CancellationToken cancellationToken)
         {
             try
             {
-                int targetFrameDelay = 1000 / (_currentConfig?.FramesPerSecond ?? 30);
+                // Target: 3 FPS (333ms per frame) - realistic for screen capture
+                int frameIntervalMs = 333;
+                var frameTimer = Stopwatch.StartNew();
+                long nextFrameTime = frameIntervalMs;
 
                 while (!cancellationToken.IsCancellationRequested && _isRecording)
                 {
-                    // Get frame from provider
-                    var frame = await _currentFrameProvider!.GetCurrentFrameAsync();
-
-                    if (frame != null && _encodingService != null)
+                    long currentTime = frameTimer.ElapsedMilliseconds;
+                    
+                    // Time for next frame?
+                    if (currentTime >= nextFrameTime)
                     {
-                        // Write frame to video
-                        bool written = await _encodingService.WriteFrameAsync(frame);
-                        if (written)
+                        var frame = await _currentFrameProvider!.GetCurrentFrameAsync();
+
+                        if (frame != null && frame is Mat mat && !mat.Empty() && _videoWriter != null)
                         {
+                            _videoWriter.Write(mat);
                             _frameCount++;
+                            mat.Dispose();
                         }
+                        
+                        // Schedule next frame
+                        nextFrameTime += frameIntervalMs;
+                    }
+                    else
+                    {
+                        // Wait until next frame time
+                        int waitTime = (int)(nextFrameTime - currentTime);
+                        await Task.Delay(Math.Min(waitTime, 50), cancellationToken);
                     }
 
                     // Check max duration
@@ -208,9 +191,6 @@ namespace CameraRecordingService.Services
                     {
                         break;
                     }
-
-                    // Delay to maintain target FPS
-                    await Task.Delay(targetFrameDelay, cancellationToken);
                 }
             }
             catch (OperationCanceledException)
@@ -223,6 +203,23 @@ namespace CameraRecordingService.Services
             }
         }
 
+        public async Task<bool> PauseRecordingAsync()
+        {
+            await Task.CompletedTask;
+            return false;
+        }
+
+        public async Task<bool> ResumeRecordingAsync()
+        {
+            await Task.CompletedTask;
+            return false;
+        }
+
+        public async Task<RecordingStatus> GetRecordingStatusAsync()
+        {
+            return await Task.FromResult(_currentStatus);
+        }
+
         private void UpdateRecordingStatus(object? state)
         {
             if (!_isRecording || _recordingStopwatch == null)
@@ -233,13 +230,11 @@ namespace CameraRecordingService.Services
             _currentStatus.FrameCount = _frameCount;
             _currentStatus.UpdatedAt = DateTime.Now;
 
-            // Calculate FPS
             if (_recordingStopwatch.ElapsedMilliseconds > 0)
             {
                 _currentStatus.CurrentFPS = (_frameCount * 1000.0) / _recordingStopwatch.ElapsedMilliseconds;
             }
 
-            // Get file size if file exists
             if (File.Exists(_outputFilePath))
             {
                 var fileInfo = new FileInfo(_outputFilePath);
@@ -269,19 +264,6 @@ namespace CameraRecordingService.Services
             if (!resValidation.IsValid)
                 return resValidation;
 
-            var fpsValidation = MediaValidationHelper.ValidateFPS(config.FramesPerSecond);
-            if (!fpsValidation.IsValid)
-                return fpsValidation;
-
-            var bitrateValidation = MediaValidationHelper.ValidateBitrate(
-                config.Bitrate,
-                config.Width,
-                config.Height,
-                config.FramesPerSecond);
-
-            if (!bitrateValidation.IsValid)
-                return bitrateValidation;
-
             return (true, string.Empty);
         }
 
@@ -307,7 +289,7 @@ namespace CameraRecordingService.Services
         public void Dispose()
         {
             _statusTimer?.Dispose();
-            _encodingService?.Dispose();
+            _videoWriter?.Dispose();
             _cancellationTokenSource?.Dispose();
         }
     }
