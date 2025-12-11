@@ -11,37 +11,26 @@ using CameraRecordingService.Models;
 namespace CameraRecordingService.Services
 {
     /// <summary>
-    /// Service for taking screenshots (stub implementation)
+    /// Service for taking screenshots
     /// </summary>
     public class ScreenshotService : IScreenshotService
     {
-        private bool _isCapturingInterval;
-        private Timer? _intervalTimer;
-        private IVideoFrameProvider? _currentFrameProvider;
-        private ScreenshotConfig? _currentConfig;
-
         // Events
         public event EventHandler<ScreenshotEventArgs>? OnScreenshotTaken;
         public event EventHandler<RecordingErrorEventArgs>? OnScreenshotError;
 
-        // Properties
-        public bool IsCapturingInterval => _isCapturingInterval;
-
         public ScreenshotService()
         {
-            _isCapturingInterval = false;
         }
+
 
         /// <summary>
         /// Take a single screenshot
         /// </summary>
-        public async Task<ScreenshotResult> TakeScreenshotAsync(IVideoFrameProvider frameProvider, ScreenshotConfig config)
+        public async Task<ScreenshotResult> TakeScreenshotAsync(ScreenshotConfig config)
         {
             try
             {
-                if (frameProvider == null)
-                    throw new ArgumentNullException(nameof(frameProvider));
-
                 if (config == null)
                     throw new ArgumentNullException(nameof(config));
 
@@ -53,11 +42,6 @@ namespace CameraRecordingService.Services
                 // Ensure output directory exists
                 if (!FilePathHelper.EnsureDirectoryExists(config.OutputPath))
                     throw new InvalidScreenshotConfigException("OutputPath", "Cannot create directory");
-
-                // Get frame from camera
-                var frame = await frameProvider.GetCurrentFrameAsync();
-                if (frame == null)
-                    throw new CameraFrameUnavailableException();
 
                 // Generate filename
                 string fileName = config.FileName;
@@ -72,9 +56,27 @@ namespace CameraRecordingService.Services
                     fileName,
                     extension);
 
-                // TODO: Implement actual frame saving
-                // For now, create a dummy file
-                await File.WriteAllTextAsync(filePath, $"Screenshot taken at {DateTime.Now}");
+                // Capture screenshot based on mode
+                System.Drawing.Bitmap? bitmap = null;
+                
+                if (config.Mode == Enums.ScreenshotMode.FullScreen)
+                {
+                    // Capture full screen
+                    bitmap = Helpers.ScreenCaptureHelper.CaptureFullScreen();
+                }
+                else if (config.Mode == Enums.ScreenshotMode.RegionSelection && config.CaptureRegion.HasValue)
+                {
+                    // Capture specific region
+                    bitmap = Helpers.ScreenCaptureHelper.CaptureRegion(config.CaptureRegion.Value);
+                }
+                else
+                {
+                    throw new InvalidScreenshotConfigException("Mode", "Invalid screenshot mode or missing capture region");
+                }
+
+                // Save bitmap to file
+                Helpers.ScreenCaptureHelper.SaveBitmap(bitmap, filePath, config.ImageFormat, config.Quality);
+                bitmap.Dispose();
 
                 var result = new ScreenshotResult
                 {
@@ -86,7 +88,7 @@ namespace CameraRecordingService.Services
 
                 RaiseScreenshotTaken(result);
 
-                return result;
+                return await Task.FromResult(result);
             }
             catch (Exception ex)
             {
@@ -102,62 +104,6 @@ namespace CameraRecordingService.Services
             }
         }
 
-        /// <summary>
-        /// Start taking screenshots at intervals
-        /// </summary>
-        public async Task<bool> StartIntervalScreenshotAsync(IVideoFrameProvider frameProvider, ScreenshotConfig config, TimeSpan interval)
-        {
-            try
-            {
-                if (_isCapturingInterval)
-                    return false;
-
-                if (interval < Config.ScreenshotDefaults.MIN_INTERVAL_SCREENSHOT ||
-                    interval > Config.ScreenshotDefaults.MAX_INTERVAL_SCREENSHOT)
-                {
-                    throw new InvalidScreenshotConfigException("Interval", 
-                        $"Interval must be between {Config.ScreenshotDefaults.MIN_INTERVAL_SCREENSHOT.TotalSeconds}s and {Config.ScreenshotDefaults.MAX_INTERVAL_SCREENSHOT.TotalSeconds}s");
-                }
-
-                _currentFrameProvider = frameProvider;
-                _currentConfig = config;
-                _isCapturingInterval = true;
-
-                _intervalTimer = new Timer(async _ =>
-                {
-                    if (_currentFrameProvider != null && _currentConfig != null)
-                    {
-                        await TakeScreenshotAsync(_currentFrameProvider, _currentConfig);
-                    }
-                }, null, TimeSpan.Zero, interval);
-
-                await Task.CompletedTask;
-                return true;
-            }
-            catch (Exception ex)
-            {
-                RaiseScreenshotError(ex.Message, ex);
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Stop interval screenshot
-        /// </summary>
-        public async Task<bool> StopIntervalScreenshotAsync()
-        {
-            if (!_isCapturingInterval)
-                return false;
-
-            _intervalTimer?.Dispose();
-            _intervalTimer = null;
-            _isCapturingInterval = false;
-            _currentFrameProvider = null;
-            _currentConfig = null;
-
-            await Task.CompletedTask;
-            return true;
-        }
 
         // Private methods
 

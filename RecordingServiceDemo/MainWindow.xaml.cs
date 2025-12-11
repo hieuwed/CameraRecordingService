@@ -18,14 +18,19 @@ namespace RecordingServiceDemo
         private readonly IScreenshotService _screenshotService;
         private readonly WebcamFrameProvider _cameraProvider;
         private readonly ScreenRecordingProvider _screenProvider;
+        private readonly MicrophoneAudioProvider _audioProvider;
         private DispatcherTimer? _statusUpdateTimer;
 
         public MainWindow()
         {
             InitializeComponent();
             
+            // Initialize audio provider
+            _audioProvider = new MicrophoneAudioProvider();
+            bool audioInitialized = _audioProvider.Initialize(48000, 2);
+            
             // Initialize services - FINAL SIMPLE SOLUTION
-            _recordingService = new FinalRecordingService();
+            _recordingService = new FinalRecordingService(_audioProvider);
             _screenshotService = new ScreenshotService();
             
             // Initialize both camera and screen providers
@@ -115,7 +120,7 @@ namespace RecordingServiceDemo
                     Height = height,
                     FramesPerSecond = sourceType == "Screen" ? 10 : 30, // Lower FPS for screen capture
                     Bitrate = bitrate, // Safe bitrate within valid range
-                    EnableAudio = false
+                    EnableAudio = true // Enable audio recording
                 };
 
                 bool started = await _recordingService.StartRecordingAsync(frameProvider, config);
@@ -123,12 +128,14 @@ namespace RecordingServiceDemo
                 if (started)
                 {
                     StartRecordingButton.IsEnabled = false;
+                    PauseResumeButton.IsEnabled = true;
+                    PauseResumeButton.Content = "⏸ Pause";
                     StopRecordingButton.IsEnabled = true;
                     CameraSourceRadio.IsEnabled = false;
                     ScreenSourceRadio.IsEnabled = false;
                     _statusUpdateTimer?.Start();
                     
-                    FooterText.Text = $"?? Recording {sourceType}...";
+                    FooterText.Text = $"🔴 Recording {sourceType}...";
                 }
                 else
                 {
@@ -150,17 +157,19 @@ namespace RecordingServiceDemo
                 StopRecordingButton.IsEnabled = false;
                 
                 // Show processing message
-                FooterText.Text = "⏳ Processing video... Please wait (this may take a few seconds)";
+                FooterText.Text = "⏳ Processing video and audio... Please wait (this may take a few seconds)";
                 
                 // Stop recording (this will trigger FFmpeg re-encoding)
                 var filePath = await _recordingService.StopRecordingAsync();
                 
                 StartRecordingButton.IsEnabled = true;
+                PauseResumeButton.IsEnabled = false;
+                PauseResumeButton.Content = "⏸ Pause";
                 CameraSourceRadio.IsEnabled = true;
                 ScreenSourceRadio.IsEnabled = true;
                 _statusUpdateTimer?.Stop();
                 
-                MessageBox.Show($"Recording saved to:\n{filePath}\n\nFormat: MP4 (H.264 codec)\nPlayable on all devices!", 
+                MessageBox.Show($"Recording saved to:\n{filePath}\n\nFormat: MP4 (H.264 codec with audio)\nPlayable on all devices!", 
                     "Recording Completed", MessageBoxButton.OK, MessageBoxImage.Information);
                 
                 FooterText.Text = $"✓ Recording saved: {filePath}";
@@ -171,12 +180,51 @@ namespace RecordingServiceDemo
                     MessageBoxButton.OK, MessageBoxImage.Error);
                 
                 StartRecordingButton.IsEnabled = true;
+                PauseResumeButton.IsEnabled = false;
                 StopRecordingButton.IsEnabled = false;
                 CameraSourceRadio.IsEnabled = true;
                 ScreenSourceRadio.IsEnabled = true;
                 _statusUpdateTimer?.Stop();
             }
         }
+
+        private async void PauseResumeButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var status = await _recordingService.GetRecordingStatusAsync();
+                
+                // Check if currently paused by looking at status message
+                bool isPaused = status.StatusMessage.Contains("Paused");
+                
+                if (isPaused)
+                {
+                    // Resume
+                    bool resumed = await _recordingService.ResumeRecordingAsync();
+                    if (resumed)
+                    {
+                        PauseResumeButton.Content = "⏸ Pause";
+                        FooterText.Text = "▶ Recording resumed";
+                    }
+                }
+                else
+                {
+                    // Pause
+                    bool paused = await _recordingService.PauseRecordingAsync();
+                    if (paused)
+                    {
+                        PauseResumeButton.Content = "▶ Resume";
+                        FooterText.Text = "⏸ Recording paused";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error pausing/resuming recording: {ex.Message}", 
+                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
 
         private async void TakeScreenshotButton_Click(object sender, RoutedEventArgs e)
         {
@@ -190,18 +238,47 @@ namespace RecordingServiceDemo
                     AddTimestamp = true
                 };
 
-                // Use camera for screenshots
-                var result = await _screenshotService.TakeScreenshotAsync(_cameraProvider, config);
-                
-                if (result.Success)
+                // Determine screenshot mode
+                if (FullScreenModeRadio.IsChecked == true)
                 {
-                    ScreenshotStatusText.Text = $"? Saved: {result.FilePath}\nSize: {result.FileSize} bytes\nTime: {result.Timestamp:HH:mm:ss}";
-                    FooterText.Text = $"Screenshot saved: {result.FilePath}";
+                    config.Mode = CameraRecordingService.Enums.ScreenshotMode.FullScreen;
+                }
+                else if (RegionSelectionModeRadio.IsChecked == true)
+                {
+                    config.Mode = CameraRecordingService.Enums.ScreenshotMode.RegionSelection;
+                    
+                    // Show region selection window
+                    var regionWindow = new RegionSelectionWindow();
+                    var result = regionWindow.ShowDialog();
+                    
+                    if (regionWindow.WasCancelled || !result.HasValue || !result.Value)
+                    {
+                        FooterText.Text = "Screenshot cancelled";
+                        return;
+                    }
+                    
+                    if (!regionWindow.SelectedRegion.HasValue)
+                    {
+                        MessageBox.Show("No region selected", "Screenshot", 
+                            MessageBoxButton.OK, MessageBoxImage.Information);
+                        return;
+                    }
+                    
+                    config.CaptureRegion = regionWindow.SelectedRegion.Value;
+                }
+
+                // Take screenshot (frameProvider is null since we're using screen capture)
+                var screenshotResult = await _screenshotService.TakeScreenshotAsync(config);
+                
+                if (screenshotResult.Success)
+                {
+                    ScreenshotStatusText.Text = $"✓ Saved: {screenshotResult.FilePath}\nSize: {screenshotResult.FileSize} bytes\nTime: {screenshotResult.Timestamp:HH:mm:ss}";
+                    FooterText.Text = $"Screenshot saved: {screenshotResult.FilePath}";
                 }
                 else
                 {
-                    ScreenshotStatusText.Text = $"? Failed: {result.ErrorMessage}";
-                    MessageBox.Show($"Screenshot failed: {result.ErrorMessage}", 
+                    ScreenshotStatusText.Text = $"✗ Failed: {screenshotResult.ErrorMessage}";
+                    MessageBox.Show($"Screenshot failed: {screenshotResult.ErrorMessage}", 
                         "Screenshot Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
@@ -211,6 +288,7 @@ namespace RecordingServiceDemo
                     "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
 
         private async void StatusUpdateTimer_Tick(object? sender, EventArgs e)
         {
@@ -277,6 +355,7 @@ namespace RecordingServiceDemo
             _statusUpdateTimer?.Stop();
             _cameraProvider?.Dispose();
             _screenProvider?.Dispose();
+            _audioProvider?.Dispose();
             
             if (_recordingService is IDisposable disposableRecording)
             {

@@ -114,6 +114,21 @@
             BMP format (no compression, largest size)
             </summary>
         </member>
+        <member name="T:CameraRecordingService.Enums.ScreenshotMode">
+            <summary>
+            Screenshot capture modes
+            </summary>
+        </member>
+        <member name="F:CameraRecordingService.Enums.ScreenshotMode.FullScreen">
+            <summary>
+            Capture the entire screen
+            </summary>
+        </member>
+        <member name="F:CameraRecordingService.Enums.ScreenshotMode.RegionSelection">
+            <summary>
+            Allow user to select a region to capture
+            </summary>
+        </member>
         <member name="T:CameraRecordingService.Enums.VideoCodec">
             <summary>
             Video codec types supported for recording
@@ -327,6 +342,33 @@
             Check if image format is supported
             </summary>
         </member>
+        <member name="T:CameraRecordingService.Helpers.ScreenCaptureHelper">
+            <summary>
+            Helper class for screen capture operations
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Helpers.ScreenCaptureHelper.CaptureFullScreen">
+            <summary>
+            Capture the entire primary screen
+            </summary>
+            <returns>Bitmap of the entire screen</returns>
+        </member>
+        <member name="M:CameraRecordingService.Helpers.ScreenCaptureHelper.CaptureRegion(System.Drawing.Rectangle)">
+            <summary>
+            Capture a specific region of the screen
+            </summary>
+            <param name="region">Rectangle defining the region to capture</param>
+            <returns>Bitmap of the specified region</returns>
+        </member>
+        <member name="M:CameraRecordingService.Helpers.ScreenCaptureHelper.SaveBitmap(System.Drawing.Bitmap,System.String,CameraRecordingService.Enums.ImageFormat,System.Int32)">
+            <summary>
+            Save bitmap to file with specified format and quality
+            </summary>
+            <param name="bitmap">Bitmap to save</param>
+            <param name="filePath">Output file path</param>
+            <param name="format">Image format</param>
+            <param name="quality">JPEG quality (1-100, only for JPG)</param>
+        </member>
         <member name="T:CameraRecordingService.Helpers.TimestampHelper">
             <summary>
             Helper class for timestamp operations
@@ -350,6 +392,45 @@
         <member name="M:CameraRecordingService.Helpers.TimestampHelper.AddTimestampToFileName(System.String)">
             <summary>
             Add timestamp to filename
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Interfaces.IAudioCaptureProvider">
+            <summary>
+            Interface for audio capture providers
+            </summary>
+        </member>
+        <member name="M:CameraRecordingService.Interfaces.IAudioCaptureProvider.Initialize(System.Int32,System.Int32)">
+            <summary>
+            Initialize the audio capture device
+            </summary>
+            <param name="sampleRate">Sample rate in Hz (e.g., 48000)</param>
+            <param name="channels">Number of channels (1 = mono, 2 = stereo)</param>
+            <returns>True if initialization succeeded</returns>
+        </member>
+        <member name="M:CameraRecordingService.Interfaces.IAudioCaptureProvider.StartCapture(System.String)">
+            <summary>
+            Start capturing audio to the specified file path
+            </summary>
+            <param name="outputFilePath">Path to save the audio file (WAV format)</param>
+        </member>
+        <member name="M:CameraRecordingService.Interfaces.IAudioCaptureProvider.StopCapture">
+            <summary>
+            Stop capturing audio
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Interfaces.IAudioCaptureProvider.IsCapturing">
+            <summary>
+            Whether audio is currently being captured
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Interfaces.IAudioCaptureProvider.SampleRate">
+            <summary>
+            Sample rate in Hz
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Interfaces.IAudioCaptureProvider.Channels">
+            <summary>
+            Number of audio channels
             </summary>
         </member>
         <member name="T:CameraRecordingService.Interfaces.IRecordingService">
@@ -411,31 +492,12 @@
             Interface for screenshot service
             </summary>
         </member>
-        <member name="M:CameraRecordingService.Interfaces.IScreenshotService.TakeScreenshotAsync(CameraRecordingService.Interfaces.IVideoFrameProvider,CameraRecordingService.Models.ScreenshotConfig)">
+        <member name="M:CameraRecordingService.Interfaces.IScreenshotService.TakeScreenshotAsync(CameraRecordingService.Models.ScreenshotConfig)">
             <summary>
-            Take a single screenshot from camera
+            Take a single screenshot
             </summary>
-            <param name="frameProvider">Video frame provider</param>
             <param name="config">Screenshot configuration</param>
             <returns>Screenshot result</returns>
-        </member>
-        <member name="M:CameraRecordingService.Interfaces.IScreenshotService.StartIntervalScreenshotAsync(CameraRecordingService.Interfaces.IVideoFrameProvider,CameraRecordingService.Models.ScreenshotConfig,System.TimeSpan)">
-            <summary>
-            Start taking screenshots at regular intervals
-            </summary>
-            <param name="frameProvider">Video frame provider</param>
-            <param name="config">Screenshot configuration</param>
-            <param name="interval">Time interval between screenshots</param>
-        </member>
-        <member name="M:CameraRecordingService.Interfaces.IScreenshotService.StopIntervalScreenshotAsync">
-            <summary>
-            Stop interval screenshot
-            </summary>
-        </member>
-        <member name="P:CameraRecordingService.Interfaces.IScreenshotService.IsCapturingInterval">
-            <summary>
-            Whether interval screenshot is currently active
-            </summary>
         </member>
         <member name="E:CameraRecordingService.Interfaces.IScreenshotService.OnScreenshotTaken">
             <summary>
@@ -593,6 +655,16 @@
             Add timestamp to filename
             </summary>
         </member>
+        <member name="P:CameraRecordingService.Models.ScreenshotConfig.Mode">
+            <summary>
+            Screenshot capture mode (FullScreen or RegionSelection)
+            </summary>
+        </member>
+        <member name="P:CameraRecordingService.Models.ScreenshotConfig.CaptureRegion">
+            <summary>
+            Capture region (only used when Mode is RegionSelection)
+            </summary>
+        </member>
         <member name="T:CameraRecordingService.Models.ScreenshotResult">
             <summary>
             Result of a screenshot operation
@@ -621,6 +693,11 @@
         <member name="P:CameraRecordingService.Models.ScreenshotResult.ErrorMessage">
             <summary>
             Error message if screenshot failed
+            </summary>
+        </member>
+        <member name="T:CameraRecordingService.Providers.MicrophoneAudioProvider">
+            <summary>
+            Audio capture provider using microphone input via NAudio
             </summary>
         </member>
         <member name="T:CameraRecordingService.Providers.ScreenRecordingProvider">
@@ -702,22 +779,12 @@
         </member>
         <member name="T:CameraRecordingService.Services.ScreenshotService">
             <summary>
-            Service for taking screenshots (stub implementation)
+            Service for taking screenshots
             </summary>
         </member>
-        <member name="M:CameraRecordingService.Services.ScreenshotService.TakeScreenshotAsync(CameraRecordingService.Interfaces.IVideoFrameProvider,CameraRecordingService.Models.ScreenshotConfig)">
+        <member name="M:CameraRecordingService.Services.ScreenshotService.TakeScreenshotAsync(CameraRecordingService.Models.ScreenshotConfig)">
             <summary>
             Take a single screenshot
-            </summary>
-        </member>
-        <member name="M:CameraRecordingService.Services.ScreenshotService.StartIntervalScreenshotAsync(CameraRecordingService.Interfaces.IVideoFrameProvider,CameraRecordingService.Models.ScreenshotConfig,System.TimeSpan)">
-            <summary>
-            Start taking screenshots at intervals
-            </summary>
-        </member>
-        <member name="M:CameraRecordingService.Services.ScreenshotService.StopIntervalScreenshotAsync">
-            <summary>
-            Stop interval screenshot
             </summary>
         </member>
     </members>

@@ -105,19 +105,39 @@
                                         Text="recording" 
                                         Padding="8" Margin="0,0,0,10"/>
                                 
-                                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                
+                                <Grid Margin="0,10,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
                                     <Button x:Name="StartRecordingButton" 
-                                           Content="▶ Start Recording" 
+                                           Grid.Column="0"
+                                           Content="▶ Start" 
                                            Style="{StaticResource PrimaryButton}"
                                            Click="StartRecordingButton_Click"
-                                           Margin="0,0,10,0"/>
+                                           Padding="15,10"
+                                           Margin="0,0,8,0"/>
+                                    <Button x:Name="PauseResumeButton" 
+                                           Grid.Column="1"
+                                           Content="⏸ Pause" 
+                                           Style="{StaticResource PrimaryButton}"
+                                           Background="{StaticResource WarningBrush}"
+                                           Click="PauseResumeButton_Click"
+                                           IsEnabled="False"
+                                           Padding="15,10"
+                                           Margin="0,0,8,0"/>
                                     <Button x:Name="StopRecordingButton" 
-                                           Content="⏹ Stop Recording" 
+                                           Grid.Column="2"
+                                           Content="⏹ Stop" 
                                            Style="{StaticResource PrimaryButton}"
                                            Background="{StaticResource DangerBrush}"
                                            Click="StopRecordingButton_Click"
-                                           IsEnabled="False"/>
-                                </StackPanel>
+                                           IsEnabled="False"
+                                           Padding="15,10"/>
+                                </Grid>
                             </StackPanel>
                             
                             <!-- Recording Status -->
@@ -156,6 +176,18 @@
                             
                             <!-- Screenshot Controls -->
                             <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                <TextBlock Text="Screenshot Mode:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                                    <RadioButton x:Name="FullScreenModeRadio" 
+                                                Content="🖥️ Full Screen" 
+                                                IsChecked="True" 
+                                                GroupName="ScreenshotMode"
+                                                Margin="0,0,20,0"/>
+                                    <RadioButton x:Name="RegionSelectionModeRadio" 
+                                                Content="✂️ Select Region" 
+                                                GroupName="ScreenshotMode"/>
+                                </StackPanel>
+                                
                                 <TextBlock Text="Output Folder:" FontWeight="SemiBold" Margin="0,0,0,5"/>
                                 <TextBox x:Name="ScreenshotOutputPath" 
                                         Text="C:\Screenshots" 

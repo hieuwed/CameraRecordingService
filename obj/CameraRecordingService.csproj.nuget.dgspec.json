@@ -43,6 +43,10 @@
         "net8.0-windows7.0": {
           "targetAlias": "net8.0-windows",
           "dependencies": {
+            "NAudio": {
+              "target": "Package",
+              "version": "[2.2.1, )"
+            },
             "OpenCvSharp4": {
               "target": "Package",
               "version": "[4.11.0.20250507, )"
@@ -54,6 +58,10 @@
             "System.Drawing.Common": {
               "target": "Package",
               "version": "[10.0.0, )"
+            },
+            "System.Text.Json": {
+              "target": "Package",
+              "version": "[9.0.0, )"
             },
             "Xabe.FFmpeg": {
               "target": "Package",

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CameraRecordingService.Config;
@@ -11,6 +12,7 @@ using CameraRecordingService.Helpers;
 using CameraRecordingService.Interfaces;
 using CameraRecordingService.Models;
 using OpenCvSharp;
+using Xabe.FFmpeg;
 
 namespace CameraRecordingService.Services
 {
@@ -33,6 +35,17 @@ namespace CameraRecordingService.Services
         
         // Store frames in memory
         private List<Mat> _capturedFrames = new List<Mat>();
+        
+        // Audio capture
+        private IAudioCaptureProvider? _audioProvider;
+        private string _audioFilePath = string.Empty;
+        
+        // Pause/Resume support
+        private bool _isPaused;
+        private DateTime? _pauseStartTime;
+        private TimeSpan _totalPausedDuration;
+        private List<string> _audioSegments = new List<string>();
+        private int _audioSegmentIndex = 0;
 
         // Events
         public event EventHandler<RecordingEventArgs>? OnRecordingStatusChanged;
@@ -41,10 +54,11 @@ namespace CameraRecordingService.Services
 
         public bool IsRecording => _isRecording;
 
-        public FinalRecordingService()
+        public FinalRecordingService(IAudioCaptureProvider? audioProvider = null)
         {
             _isRecording = false;
             _currentStatus = new RecordingStatus();
+            _audioProvider = audioProvider;
         }
 
         public async Task<bool> StartRecordingAsync(IVideoFrameProvider frameProvider, RecordingConfig config)
@@ -79,7 +93,24 @@ namespace CameraRecordingService.Services
                 _isRecording = true;
                 _frameCount = 0;
                 _capturedFrames.Clear();
+                _isPaused = false;
+                _pauseStartTime = null;
+                _totalPausedDuration = TimeSpan.Zero;
+                _audioSegments.Clear();
+                _audioSegmentIndex = 0;
 
+                // Start audio capture FIRST if enabled (before video to ensure sync)
+                if (config.EnableAudio && _audioProvider != null)
+                {
+                    _audioFilePath = Path.Combine(
+                        Path.GetDirectoryName(_outputFilePath) ?? "",
+                        Path.GetFileNameWithoutExtension(_outputFilePath) + "_audio_0.wav");
+                    
+                    _audioSegments.Add(_audioFilePath);
+                    _audioProvider.StartCapture(_audioFilePath);
+                }
+
+                // Then start video recording (ensures audio and video start together)
                 _recordingStopwatch = Stopwatch.StartNew();
                 _statusTimer = new Timer(UpdateRecordingStatus, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(500));
                 _cancellationTokenSource = new CancellationTokenSource();
@@ -111,14 +142,65 @@ namespace CameraRecordingService.Services
                 _statusTimer?.Dispose();
                 _recordingStopwatch?.Stop();
 
+                // Stop audio capture if it was running
+                if (_currentConfig?.EnableAudio == true && _audioProvider != null)
+                {
+                    _audioProvider.StopCapture();
+                }
+
                 _isRecording = false;
 
-                // Calculate ACTUAL FPS from recording
-                double recordingTimeSeconds = _recordingStopwatch.Elapsed.TotalSeconds;
-                double actualFPS = _frameCount / recordingTimeSeconds;
+                // Calculate ACTUAL FPS from ACTIVE recording time (exclude paused time)
+                var actualRecordingTime = _recordingStopwatch.Elapsed - _totalPausedDuration;
+                double actualFPS = _frameCount / actualRecordingTime.TotalSeconds;
                 
                 // Write video with ACTUAL FPS
-                await WriteVideoWithActualFPS(_outputFilePath, actualFPS);
+                string videoOnlyPath = _outputFilePath.Replace(".mp4", "_video.mp4");
+                await WriteVideoWithActualFPS(videoOnlyPath, actualFPS);
+                
+                // Mux audio and video if audio was enabled
+                if (_currentConfig?.EnableAudio == true && _audioSegments.Count > 0)
+                {
+                    // Merge all audio segments first if multiple
+                    string finalAudioPath = _audioSegments[0];
+                    
+                    if (_audioSegments.Count > 1)
+                    {
+                        finalAudioPath = _outputFilePath.Replace(".mp4", "_audio_merged.wav");
+                        await MergeAudioSegmentsAsync(_audioSegments, finalAudioPath);
+                    }
+                    
+                    if (File.Exists(finalAudioPath))
+                    {
+                        await MuxAudioVideoAsync(videoOnlyPath, finalAudioPath, _outputFilePath);
+                        
+                        // Clean up temporary files
+                        try
+                        {
+                            File.Delete(videoOnlyPath);
+                            
+                            // Delete all audio segments
+                            foreach (var segment in _audioSegments)
+                            {
+                                if (File.Exists(segment))
+                                    File.Delete(segment);
+                            }
+                            
+                            // Delete merged audio if it was created
+                            if (_audioSegments.Count > 1 && File.Exists(finalAudioPath))
+                                File.Delete(finalAudioPath);
+                        }
+                        catch { /* Ignore cleanup errors */ }
+                    }
+                }
+                else
+                {
+                    // No audio, just rename video file to final output
+                    if (File.Exists(videoOnlyPath))
+                    {
+                        File.Move(videoOnlyPath, _outputFilePath, overwrite: true);
+                    }
+                }
                 
                 // Clean up frames
                 foreach (var frame in _capturedFrames)
@@ -172,6 +254,83 @@ namespace CameraRecordingService.Services
             });
         }
 
+        private async Task MuxAudioVideoAsync(string videoPath, string audioPath, string outputPath)
+        {
+            try
+            {
+                // Get media info
+                var videoInfo = await FFmpeg.GetMediaInfo(videoPath);
+                var audioInfo = await FFmpeg.GetMediaInfo(audioPath);
+
+                var videoStream = videoInfo.VideoStreams.FirstOrDefault();
+                var audioStream = audioInfo.AudioStreams.FirstOrDefault();
+
+                if (videoStream == null)
+                    throw new InvalidOperationException("No video stream found");
+
+                if (audioStream == null)
+                    throw new InvalidOperationException("No audio stream found");
+
+                // Create conversion with both streams and sync parameters
+                var conversion = FFmpeg.Conversions.New()
+                    .AddStream(videoStream)
+                    .AddStream(audioStream)
+                    .AddParameter("-async 1")  // Audio sync method
+                    .AddParameter("-vsync cfr")  // Constant frame rate for video
+                    .SetOutput(outputPath)
+                    .SetOverwriteOutput(true);
+
+                // Execute the muxing
+                await conversion.Start();
+            }
+            catch (Exception ex)
+            {
+                // If muxing fails, just use the video file
+                if (File.Exists(videoPath))
+                {
+                    File.Copy(videoPath, outputPath, overwrite: true);
+                }
+                
+                RaiseRecordingError($"Audio muxing failed: {ex.Message}. Video saved without audio.", ex);
+            }
+        }
+
+        private async Task MergeAudioSegmentsAsync(List<string> audioSegments, string outputPath)
+        {
+            try
+            {
+                // Create FFmpeg concat command
+                var conversion = FFmpeg.Conversions.New();
+                
+                // Add all input files
+                foreach (var segment in audioSegments)
+                {
+                    conversion.AddParameter($"-i \"{segment}\"");
+                }
+                
+                // Use concat filter to merge audio segments
+                var filterComplex = $"concat=n={audioSegments.Count}:v=0:a=1[outa]";
+                conversion.AddParameter($"-filter_complex \"{filterComplex}\"");
+                conversion.AddParameter("-map \"[outa]\"");
+                conversion.SetOutput(outputPath);
+                conversion.SetOverwriteOutput(true);
+                
+                await conversion.Start();
+            }
+            catch (Exception ex)
+            {
+                // If merge fails, just use the first segment
+                if (File.Exists(audioSegments[0]))
+                {
+                    File.Copy(audioSegments[0], outputPath, overwrite: true);
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Failed to merge audio segments: {ex.Message}", ex);
+                }
+            }
+        }
+
         private async Task RecordingTaskAsync(CancellationToken cancellationToken)
         {
             try
@@ -179,6 +338,13 @@ namespace CameraRecordingService.Services
                 // Capture frames as fast as possible
                 while (!cancellationToken.IsCancellationRequested && _isRecording)
                 {
+                    // Skip frame capture when paused
+                    if (_isPaused)
+                    {
+                        await Task.Delay(100, cancellationToken);
+                        continue;
+                    }
+
                     var frame = await _currentFrameProvider!.GetCurrentFrameAsync();
 
                     if (frame != null && frame is Mat mat && !mat.Empty())
@@ -212,14 +378,64 @@ namespace CameraRecordingService.Services
 
         public async Task<bool> PauseRecordingAsync()
         {
-            await Task.CompletedTask;
-            return false;
+            try
+            {
+                if (!_isRecording || _isPaused)
+                    return false;
+
+                _isPaused = true;
+                _pauseStartTime = DateTime.Now;
+                
+                // Stop audio during pause to match video duration
+                if (_currentConfig?.EnableAudio == true && _audioProvider != null && _audioProvider.IsCapturing)
+                {
+                    _audioProvider.StopCapture();
+                }
+
+                RaiseRecordingStatusChanged();
+                return await Task.FromResult(true);
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public async Task<bool> ResumeRecordingAsync()
         {
-            await Task.CompletedTask;
-            return false;
+            try
+            {
+                if (!_isRecording || !_isPaused)
+                    return false;
+
+                // Add the pause duration to total
+                if (_pauseStartTime.HasValue)
+                {
+                    _totalPausedDuration += DateTime.Now - _pauseStartTime.Value;
+                    _pauseStartTime = null;
+                }
+
+                _isPaused = false;
+                
+                // Resume audio - create new segment
+                if (_currentConfig?.EnableAudio == true && _audioProvider != null)
+                {
+                    _audioSegmentIndex++;
+                    var newSegmentPath = Path.Combine(
+                        Path.GetDirectoryName(_outputFilePath) ?? "",
+                        Path.GetFileNameWithoutExtension(_outputFilePath) + $"_audio_{_audioSegmentIndex}.wav");
+                    
+                    _audioSegments.Add(newSegmentPath);
+                    _audioProvider.StartCapture(newSegmentPath);
+                }
+
+                RaiseRecordingStatusChanged();
+                return await Task.FromResult(true);
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public async Task<RecordingStatus> GetRecordingStatusAsync()
@@ -233,7 +449,17 @@ namespace CameraRecordingService.Services
                 return;
 
             _currentStatus.IsRecording = true;
-            _currentStatus.Duration = _recordingStopwatch.Elapsed;
+            
+            // Calculate display duration
+            var displayDuration = _recordingStopwatch.Elapsed - _totalPausedDuration;
+            
+            // If currently paused, subtract the current pause duration
+            if (_isPaused && _pauseStartTime.HasValue)
+            {
+                displayDuration -= (DateTime.Now - _pauseStartTime.Value);
+            }
+            
+            _currentStatus.Duration = displayDuration;
             _currentStatus.FrameCount = _frameCount;
             _currentStatus.UpdatedAt = DateTime.Now;
 
@@ -245,10 +471,17 @@ namespace CameraRecordingService.Services
             // Estimate file size based on frames
             _currentStatus.FileSize = _frameCount * 100000; // Rough estimate
 
-            _currentStatus.StatusMessage =
-                $"Recording: {TimestampHelper.FormatDuration(_currentStatus.Duration)} " +
-                $"| {_frameCount} frames " +
-                $"| {_currentStatus.CurrentFPS:F1} FPS";
+            if (_isPaused)
+            {
+                _currentStatus.StatusMessage = $"⏸ Paused: {TimestampHelper.FormatDuration(_currentStatus.Duration)} | {_frameCount} frames";
+            }
+            else
+            {
+                _currentStatus.StatusMessage =
+                    $"Recording: {TimestampHelper.FormatDuration(_currentStatus.Duration)} " +
+                    $"| {_frameCount} frames " +
+                    $"| {_currentStatus.CurrentFPS:F1} FPS";
+            }
 
             RaiseRecordingStatusChanged();
         }
@@ -294,6 +527,7 @@ namespace CameraRecordingService.Services
         {
             _statusTimer?.Dispose();
             _cancellationTokenSource?.Dispose();
+            _audioProvider?.Dispose();
             
             // Clean up any remaining frames
             foreach (var frame in _capturedFrames)

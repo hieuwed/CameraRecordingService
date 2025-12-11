@@ -1,4 +1,5 @@
 using CameraRecordingService.Enums;
+using System.Drawing;
 
 namespace CameraRecordingService.Models
 {
@@ -31,5 +32,15 @@ namespace CameraRecordingService.Models
         /// Add timestamp to filename
         /// </summary>
         public bool AddTimestamp { get; set; } = true;
+
+        /// <summary>
+        /// Screenshot capture mode (FullScreen or RegionSelection)
+        /// </summary>
+        public ScreenshotMode Mode { get; set; } = ScreenshotMode.FullScreen;
+
+        /// <summary>
+        /// Capture region (only used when Mode is RegionSelection)
+        /// </summary>
+        public Rectangle? CaptureRegion { get; set; }
     }
 }

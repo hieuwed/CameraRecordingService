@@ -11,30 +11,11 @@ namespace CameraRecordingService.Interfaces
     public interface IScreenshotService
     {
         /// <summary>
-        /// Take a single screenshot from camera
+        /// Take a single screenshot
         /// </summary>
-        /// <param name="frameProvider">Video frame provider</param>
         /// <param name="config">Screenshot configuration</param>
         /// <returns>Screenshot result</returns>
-        Task<ScreenshotResult> TakeScreenshotAsync(IVideoFrameProvider frameProvider, ScreenshotConfig config);
-
-        /// <summary>
-        /// Start taking screenshots at regular intervals
-        /// </summary>
-        /// <param name="frameProvider">Video frame provider</param>
-        /// <param name="config">Screenshot configuration</param>
-        /// <param name="interval">Time interval between screenshots</param>
-        Task<bool> StartIntervalScreenshotAsync(IVideoFrameProvider frameProvider, ScreenshotConfig config, TimeSpan interval);
-
-        /// <summary>
-        /// Stop interval screenshot
-        /// </summary>
-        Task<bool> StopIntervalScreenshotAsync();
-
-        /// <summary>
-        /// Whether interval screenshot is currently active
-        /// </summary>
-        bool IsCapturingInterval { get; }
+        Task<ScreenshotResult> TakeScreenshotAsync(ScreenshotConfig config);
 
         /// <summary>
         /// Event: Screenshot taken successfully

@@ -33,3 +33,16 @@ D:\QA\CameraRecordingService\RecordingServiceDemo\bin\Debug\net8.0-windows\Syste
 D:\QA\CameraRecordingService\RecordingServiceDemo\bin\Debug\net8.0-windows\runtimes\win\lib\net8.0\Microsoft.Win32.SystemEvents.dll
 D:\QA\CameraRecordingService\RecordingServiceDemo\bin\Debug\net8.0-windows\Xabe.FFmpeg.dll
 D:\QA\CameraRecordingService\RecordingServiceDemo\obj\Debug\net8.0-windows\RecordingServiceDemo.sourcelink.json
+D:\QA\CameraRecordingService\RecordingServiceDemo\bin\Debug\net8.0-windows\NAudio.dll
+D:\QA\CameraRecordingService\RecordingServiceDemo\bin\Debug\net8.0-windows\NAudio.Asio.dll
+D:\QA\CameraRecordingService\RecordingServiceDemo\bin\Debug\net8.0-windows\NAudio.Core.dll
+D:\QA\CameraRecordingService\RecordingServiceDemo\bin\Debug\net8.0-windows\NAudio.Midi.dll
+D:\QA\CameraRecordingService\RecordingServiceDemo\bin\Debug\net8.0-windows\NAudio.Wasapi.dll
+D:\QA\CameraRecordingService\RecordingServiceDemo\bin\Debug\net8.0-windows\NAudio.WinForms.dll
+D:\QA\CameraRecordingService\RecordingServiceDemo\bin\Debug\net8.0-windows\NAudio.WinMM.dll
+D:\QA\CameraRecordingService\RecordingServiceDemo\bin\Debug\net8.0-windows\System.IO.Pipelines.dll
+D:\QA\CameraRecordingService\RecordingServiceDemo\bin\Debug\net8.0-windows\System.Text.Encodings.Web.dll
+D:\QA\CameraRecordingService\RecordingServiceDemo\bin\Debug\net8.0-windows\System.Text.Json.dll
+D:\QA\CameraRecordingService\RecordingServiceDemo\bin\Debug\net8.0-windows\runtimes\browser\lib\net8.0\System.Text.Encodings.Web.dll
+D:\QA\CameraRecordingService\RecordingServiceDemo\obj\Debug\net8.0-windows\RegionSelectionWindow.baml
+D:\QA\CameraRecordingService\RecordingServiceDemo\obj\Debug\net8.0-windows\RegionSelectionWindow.g.cs
