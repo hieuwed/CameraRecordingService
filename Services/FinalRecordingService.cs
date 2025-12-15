@@ -102,12 +102,27 @@ namespace CameraRecordingService.Services
                 // Start audio capture FIRST if enabled (before video to ensure sync)
                 if (config.EnableAudio && _audioProvider != null)
                 {
-                    _audioFilePath = Path.Combine(
-                        Path.GetDirectoryName(_outputFilePath) ?? "",
-                        Path.GetFileNameWithoutExtension(_outputFilePath) + "_audio_0.wav");
-                    
-                    _audioSegments.Add(_audioFilePath);
-                    _audioProvider.StartCapture(_audioFilePath);
+                    try 
+                    {
+                        var audioDir = Path.GetDirectoryName(_outputFilePath) ?? "";
+                        // Ensure directory exists for audio file too
+                        FilePathHelper.EnsureDirectoryExists(audioDir);
+                        
+                        _audioFilePath = Path.Combine(
+                            audioDir,
+                            Path.GetFileNameWithoutExtension(_outputFilePath) + "_audio_0.wav");
+                        
+                        _audioSegments.Add(_audioFilePath);
+                        _audioProvider.StartCapture(_audioFilePath);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Fallback: Disable audio if capture fails start
+                        config.EnableAudio = false;
+                        _audioSegments.Clear();
+                        // Log warning (non-fatal)
+                        RaiseRecordingError($"Audio capture failed to start: {ex.Message}. Continuation without audio.", ex);
+                    }
                 }
 
                 // Then start video recording (ensures audio and video start together)
@@ -145,7 +160,9 @@ namespace CameraRecordingService.Services
                 // Stop audio capture if it was running
                 if (_currentConfig?.EnableAudio == true && _audioProvider != null)
                 {
-                    _audioProvider.StopCapture();
+                    try {
+                         _audioProvider.StopCapture();
+                    } catch { /* Ignore stop errors if audio failed midway */ }
                 }
 
                 _isRecording = false;

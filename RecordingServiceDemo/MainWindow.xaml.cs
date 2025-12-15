@@ -20,6 +20,7 @@ namespace RecordingServiceDemo
         private readonly ScreenRecordingProvider _screenProvider;
         private readonly MicrophoneAudioProvider _audioProvider;
         private DispatcherTimer? _statusUpdateTimer;
+        private bool _isAudioAvailable = false;
 
         public MainWindow()
         {
@@ -27,7 +28,7 @@ namespace RecordingServiceDemo
             
             // Initialize audio provider
             _audioProvider = new MicrophoneAudioProvider();
-            bool audioInitialized = _audioProvider.Initialize(48000, 2);
+            _isAudioAvailable = _audioProvider.Initialize(48000, 2);
             
             // Initialize services - FINAL SIMPLE SOLUTION
             _recordingService = new FinalRecordingService(_audioProvider);
@@ -48,23 +49,23 @@ namespace RecordingServiceDemo
             {
                 var camRes = _cameraProvider.Resolution;
                 var scrRes = _screenProvider.Resolution;
-                FooterText.Text = $"? Camera: {camRes.Width}x{camRes.Height} | Screen: {scrRes.Width}x{scrRes.Height}";
+                FooterText.Text = $"📷 Camera: {camRes.Width}x{camRes.Height} | Screen: {scrRes.Width}x{scrRes.Height} | Audio: {(_isAudioAvailable ? "Ready" : "Unavailable")}";
             }
             else if (cameraInitialized)
             {
                 var res = _cameraProvider.Resolution;
-                FooterText.Text = $"? Camera ready: {res.Width}x{res.Height} | ?? Screen capture unavailable";
+                FooterText.Text = $"📷 Camera ready: {res.Width}x{res.Height} | ❌ Screen capture unavailable | Audio: {(_isAudioAvailable ? "Ready" : "Unavailable")}";
             }
             else if (screenInitialized)
             {
                 var res = _screenProvider.Resolution;
-                FooterText.Text = $"?? Camera unavailable | ? Screen ready: {res.Width}x{res.Height}";
+                FooterText.Text = $"❌ Camera unavailable | 🖥 Screen ready: {res.Width}x{res.Height} | Audio: {(_isAudioAvailable ? "Ready" : "Unavailable")}";
             }
             else
             {
                 MessageBox.Show("Failed to initialize both camera and screen capture.\n\nPlease check your system.", 
                     "Initialization Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                FooterText.Text = "?? No recording sources available";
+                FooterText.Text = "❌ No recording sources available";
             }
             
             // Subscribe to events
@@ -120,7 +121,7 @@ namespace RecordingServiceDemo
                     Height = height,
                     FramesPerSecond = sourceType == "Screen" ? 10 : 30, // Lower FPS for screen capture
                     Bitrate = bitrate, // Safe bitrate within valid range
-                    EnableAudio = true // Enable audio recording
+                    EnableAudio = _isAudioAvailable // Enable audio only if hardware is available
                 };
 
                 bool started = await _recordingService.StartRecordingAsync(frameProvider, config);
@@ -135,7 +136,7 @@ namespace RecordingServiceDemo
                     ScreenSourceRadio.IsEnabled = false;
                     _statusUpdateTimer?.Start();
                     
-                    FooterText.Text = $"🔴 Recording {sourceType}...";
+                    FooterText.Text = $"🔴 Recording {sourceType}... {(config.EnableAudio ? "(with Audio)" : "(No Audio)")}";
                 }
                 else
                 {

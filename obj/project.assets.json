@@ -956,7 +956,7 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\AD\\.nuget\\packages\\": {}
+    "C:\\Users\\SingPC\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
@@ -964,11 +964,11 @@
       "projectUniqueName": "D:\\QA\\CameraRecordingService\\CameraRecordingService.csproj",
       "projectName": "CameraRecordingService",
       "projectPath": "D:\\QA\\CameraRecordingService\\CameraRecordingService.csproj",
-      "packagesPath": "C:\\Users\\AD\\.nuget\\packages\\",
+      "packagesPath": "C:\\Users\\SingPC\\.nuget\\packages\\",
       "outputPath": "D:\\QA\\CameraRecordingService\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\AD\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "C:\\Users\\SingPC\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net8.0-windows"
