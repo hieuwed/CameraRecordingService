@@ -5,9 +5,9 @@ D:\QA\CameraRecordingService\bin\Debug\net8.0-windows\CameraRecordingService.xml
 D:\QA\CameraRecordingService\obj\Debug\net8.0-windows\CameraRecordingService.csproj.AssemblyReference.cache
 D:\QA\CameraRecordingService\obj\Debug\net8.0-windows\CameraRecordingService.GeneratedMSBuildEditorConfig.editorconfig
 D:\QA\CameraRecordingService\obj\Debug\net8.0-windows\CameraRecordingService.csproj.CoreCompileInputs.cache
+D:\QA\CameraRecordingService\obj\Debug\net8.0-windows\CameraRecordingService.sourcelink.json
 D:\QA\CameraRecordingService\obj\Debug\net8.0-windows\CameraRecordingService.dll
 D:\QA\CameraRecordingService\obj\Debug\net8.0-windows\refint\CameraRecordingService.dll
 D:\QA\CameraRecordingService\obj\Debug\net8.0-windows\CameraRecordingService.xml
 D:\QA\CameraRecordingService\obj\Debug\net8.0-windows\CameraRecordingService.pdb
 D:\QA\CameraRecordingService\obj\Debug\net8.0-windows\ref\CameraRecordingService.dll
-D:\QA\CameraRecordingService\obj\Debug\net8.0-windows\CameraRecordingService.sourcelink.json

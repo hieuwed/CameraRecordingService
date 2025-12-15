@@ -19,11 +19,6 @@ namespace CameraRecordingService.Services
         public event EventHandler<ScreenshotEventArgs>? OnScreenshotTaken;
         public event EventHandler<RecordingErrorEventArgs>? OnScreenshotError;
 
-        public ScreenshotService()
-        {
-        }
-
-
         /// <summary>
         /// Take a single screenshot
         /// </summary>

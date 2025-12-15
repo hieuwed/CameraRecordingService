@@ -49,7 +49,9 @@ namespace CameraRecordingService.Providers
         }
 
         /// <summary>
-        /// Initialize with custom resolution (will scale screen capture)
+        /// Initialize with custom resolution
+        /// Note: Parameters are ignored. Always uses actual screen resolution for optimal performance.
+        /// Resizing during capture is very slow, so native resolution is always used.
         /// </summary>
         public bool Initialize(int width, int height)
         {
